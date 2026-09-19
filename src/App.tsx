@@ -1,15 +1,36 @@
-import { Button } from '@/components/ui/button'
+// Smart Solar Microgrid Trading System - Application Routing Entrypoint
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from '@/hooks/useAuth';
+import { AppLayout } from '@/layouts/AppLayout';
+import { LoginPage } from '@/pages/auth/LoginPage';
+import { DashboardPage } from '@/pages/dashboard/DashboardPage';
+import { ReservationsPage } from '@/pages/reservations/ReservationsPage';
+import { CreateReservationPage } from '@/pages/reservations/CreateReservationPage';
+import { PendingPage } from '@/pages/reservations/PendingPage';
+import { HistoryPage } from '@/pages/reservations/HistoryPage';
 
 function App() {
   return (
-    <main className="flex min-h-svh items-center justify-center bg-background p-8 text-foreground">
-      <section className="w-full max-w-lg space-y-5 rounded-xl border p-8">
-        <h1 className="text-3xl font-semibold tracking-tight">SolarGridX</h1>
-        <p className="text-muted-foreground">Smart Solar Microgrid Trading System</p>
-        <Button disabled>Coming soon</Button>
-      </section>
-    </main>
-  )
+    <AuthProvider>
+      <Routes>
+        {/* Public Authentication Route */}
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* Protected Enterprise Portal Routes */}
+        <Route path="/" element={<AppLayout />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="reservations" element={<ReservationsPage />} />
+          <Route path="reservations/create" element={<CreateReservationPage />} />
+          <Route path="reservations/pending" element={<PendingPage />} />
+          <Route path="reservations/history" element={<HistoryPage />} />
+        </Route>
+
+        {/* Fallback Catch-all Route */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </AuthProvider>
+  );
 }
 
-export default App
+export default App;
