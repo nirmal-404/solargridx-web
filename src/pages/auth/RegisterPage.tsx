@@ -2,7 +2,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AlertCircle, CheckCircle2, SunMedium } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import CommonForm from "@/components/common/Form";
 import { registerFormControls } from "@/config/FormControls";
 import { validateForm } from "@/config/ValidateForm";
@@ -31,7 +37,9 @@ const initialRegisterFormData: RegisterFormData = {
 
 export function RegisterPage() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<RegisterFormData>(initialRegisterFormData);
+  const [formData, setFormData] = useState<RegisterFormData>(
+    initialRegisterFormData,
+  );
   const [dirtyFields, setDirtyFields] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -39,7 +47,8 @@ export function RegisterPage() {
 
   const validationResult = validateForm(registerFormControls, formData);
   const hasDirtyField = Object.keys(dirtyFields).length > 0;
-  const isSubmitDisabled = isLoading || (hasDirtyField && !validationResult.isValid);
+  const isSubmitDisabled =
+    isLoading || (hasDirtyField && !validationResult.isValid);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -49,7 +58,9 @@ export function RegisterPage() {
     const validation = validateForm(registerFormControls, formData);
     if (!validation.isValid) {
       const firstErrorMessage = Object.values(validation.errors)[0];
-      setErrorMessage(firstErrorMessage || "Please complete all required fields correctly.");
+      setErrorMessage(
+        firstErrorMessage || "Please complete all required fields correctly.",
+      );
       return;
     }
 
@@ -66,7 +77,9 @@ export function RegisterPage() {
         password: formData.password,
       });
 
-      setSuccessMessage("Your account has been created successfully. Redirecting to sign in...");
+      setSuccessMessage(
+        "Your account has been created successfully. Redirecting to sign in...",
+      );
       setFormData(initialRegisterFormData);
       setDirtyFields({});
 
@@ -74,7 +87,9 @@ export function RegisterPage() {
         navigate("/login");
       }, 1200);
     } catch (err: unknown) {
-      setErrorMessage(parseApiError(err, "Account creation failed. Please try again."));
+      setErrorMessage(
+        parseApiError(err, "Account creation failed. Please try again."),
+      );
     } finally {
       setIsLoading(false);
     }
@@ -91,7 +106,8 @@ export function RegisterPage() {
             Register Your Account
           </h1>
           <p className="text-xs text-muted-foreground">
-            Create your SolarGridX prosumer profile to access the trading platform
+            Create your SolarGridX prosumer profile to access the trading
+            platform
           </p>
         </div>
 
@@ -136,7 +152,10 @@ export function RegisterPage() {
 
             <div className="pt-2 text-center text-xs text-muted-foreground">
               Already have an account?{" "}
-              <Link to="/login" className="font-medium text-primary underline-offset-4 hover:underline">
+              <Link
+                to="/login"
+                className="font-medium text-primary underline-offset-4 hover:underline"
+              >
                 Sign in
               </Link>
             </div>
@@ -144,7 +163,9 @@ export function RegisterPage() {
             <div className="rounded-md border border-dashed border-border bg-muted/30 p-3 text-[11px] text-muted-foreground">
               <p className="font-medium text-foreground">Account review</p>
               <p className="mt-1">
-                Your profile will be created in a pending state and must be activated by the Backoffice team before you can use the platform.
+                Your profile will be created in a pending state and must be
+                activated by the Backoffice team before you can use the
+                platform.
               </p>
             </div>
           </CardContent>

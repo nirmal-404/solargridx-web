@@ -179,7 +179,10 @@ export const registerFormControls: FormControl[] = [
       .trim()
       .optional()
       .or(z.literal(""))
-      .refine((value) => !value || value.length >= 9, "Phone number is too short."),
+      .refine(
+        (value) => !value || value.length >= 9,
+        "Phone number is too short.",
+      ),
   },
   {
     name: "address",

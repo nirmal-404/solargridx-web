@@ -3,7 +3,13 @@ import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { AlertCircle, KeyRound, SunMedium } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import CommonForm from "@/components/common/Form";
 import { loginFormControls } from "@/config/FormControls";
 import { validateForm } from "@/config/ValidateForm";
@@ -31,7 +37,8 @@ export function LoginPage() {
 
   const validationResult = validateForm(loginFormControls, formData);
   const hasDirtyField = Object.keys(dirtyFields).length > 0;
-  const isSubmitDisabled = isLoading || (hasDirtyField && !validationResult.isValid);
+  const isSubmitDisabled =
+    isLoading || (hasDirtyField && !validationResult.isValid);
 
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
@@ -44,7 +51,9 @@ export function LoginPage() {
     const validation = validateForm(loginFormControls, formData);
     if (!validation.isValid) {
       const firstErrorMessage = Object.values(validation.errors)[0];
-      setErrorMessage(firstErrorMessage || "Please complete all required fields correctly.");
+      setErrorMessage(
+        firstErrorMessage || "Please complete all required fields correctly.",
+      );
       return;
     }
 
@@ -129,7 +138,9 @@ export function LoginPage() {
                   variant="outline"
                   size="sm"
                   className="text-[10px] h-7"
-                  onClick={() => handleQuickFill("admin@solargridx.local", "Admin@1234")}
+                  onClick={() =>
+                    handleQuickFill("admin@solargridx.local", "Admin@1234")
+                  }
                 >
                   Backoffice
                 </Button>
@@ -138,7 +149,12 @@ export function LoginPage() {
                   variant="outline"
                   size="sm"
                   className="text-[10px] h-7"
-                  onClick={() => handleQuickFill("operator@solargridx.local", "Operator@1234")}
+                  onClick={() =>
+                    handleQuickFill(
+                      "operator@solargridx.local",
+                      "Operator@1234",
+                    )
+                  }
                 >
                   Operator
                 </Button>
@@ -147,7 +163,12 @@ export function LoginPage() {
                   variant="outline"
                   size="sm"
                   className="text-[10px] h-7"
-                  onClick={() => handleQuickFill("kamal.silva@prosumer.local", "Prosumer@1234")}
+                  onClick={() =>
+                    handleQuickFill(
+                      "kamal.silva@prosumer.local",
+                      "Prosumer@1234",
+                    )
+                  }
                 >
                   Prosumer
                 </Button>
