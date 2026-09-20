@@ -34,4 +34,14 @@ export const userService = {
     const response = await apiClient.post<User>("/staff", request);
     return response.data;
   },
+
+  async updateStaffStatus(
+    userId: string,
+    accountStatus: "Active" | "Deactivated",
+  ): Promise<User> {
+    const response = await apiClient.patch<User>(`/staff/${userId}/status`, {
+      accountStatus,
+    });
+    return response.data;
+  },
 };

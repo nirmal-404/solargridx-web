@@ -255,6 +255,17 @@ export function UserManagementPage() {
             limit={limit}
             onApplyFilters={handleApplyFilters}
             onPageChange={handlePageChange}
+            onStatusChanged={() =>
+              void loadStaffUsers(
+                page,
+                search,
+                roleFilter,
+                statusFilter,
+                sortField,
+                sortOrder,
+                limit,
+              )
+            }
           />
         </CardContent>
       </Card>

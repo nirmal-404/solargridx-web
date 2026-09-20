@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Filter, Loader2, Search } from "lucide-react";
+import { userService } from "@/services/userService";
 import type { User } from "@/types/auth";
 
 interface StaffTablePanelProps {
@@ -44,6 +45,7 @@ interface StaffTablePanelProps {
     limit: number;
   }) => void;
   onPageChange: (nextPage: number) => void;
+  onStatusChanged?: () => void;
 }
 
 export function StaffTablePanel({
@@ -61,6 +63,7 @@ export function StaffTablePanel({
   limit,
   onApplyFilters,
   onPageChange,
+  onStatusChanged,
 }: StaffTablePanelProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [draftRoleFilter, setDraftRoleFilter] = useState(roleFilter);
@@ -108,6 +111,18 @@ export function StaffTablePanel({
     setShowFilters(false);
   };
 
+  const handleStatusToggle = async (user: User) => {
+    const nextStatus =
+      user.accountStatus === "Active" ? "Deactivated" : "Active";
+
+    try {
+      await userService.updateStaffStatus(user.id, nextStatus);
+      onStatusChanged?.();
+    } catch (error) {
+      console.error("Failed to update staff status", error);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 lg:flex-row">
@@ -137,7 +152,7 @@ export function StaffTablePanel({
           {showFilters && (
             <div
               ref={filterPanelRef}
-              className="absolute right-0 top-[calc(100%+8px)] z-20 w-[280px] rounded-xl border border-border bg-popover p-4 shadow-lg"
+              className="absolute right-0 top-[calc(100%+8px)] z-20 w-70 rounded-xl border border-border bg-popover p-4 shadow-lg"
             >
               <div className="space-y-3">
                 <div className="space-y-1.5">
@@ -286,6 +301,7 @@ export function StaffTablePanel({
                 <TableHead>Address</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -303,7 +319,7 @@ export function StaffTablePanel({
                   <TableCell className="text-muted-foreground">
                     {user.phone ?? "—"}
                   </TableCell>
-                  <TableCell className="max-w-[180px] text-muted-foreground">
+                  <TableCell className="max-w-45 text-muted-foreground">
                     {user.address ?? "—"}
                   </TableCell>
                   <TableCell>
@@ -325,6 +341,23 @@ export function StaffTablePanel({
                     >
                       {user.accountStatus}
                     </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      type="button"
+                      variant={
+                        user.accountStatus === "Active"
+                          ? "destructive"
+                          : "default"
+                      }
+                      size="sm"
+                      className="h-7 px-2 text-[10px]"
+                      onClick={() => void handleStatusToggle(user)}
+                    >
+                      {user.accountStatus === "Active"
+                        ? "Deactivate"
+                        : "Activate"}
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
