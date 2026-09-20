@@ -1,14 +1,14 @@
 // Smart Solar Microgrid Trading System - Application Routing Entrypoint
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from '@/hooks/useAuth';
-import { AppLayout } from '@/layouts/AppLayout';
-import { LoginPage } from '@/pages/auth/LoginPage';
-import { DashboardPage } from '@/pages/dashboard/DashboardPage';
-import { ReservationsPage } from '@/pages/reservations/ReservationsPage';
-import { CreateReservationPage } from '@/pages/reservations/CreateReservationPage';
-import { PendingPage } from '@/pages/reservations/PendingPage';
-import { HistoryPage } from '@/pages/reservations/HistoryPage';
-import { CreateUserPage } from '@/pages/users/CreateUserPage';
+import { Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
+import { AppLayout } from "@/layouts/AppLayout";
+import { LoginPage } from "@/pages/auth/LoginPage";
+import { DashboardPage } from "@/pages/dashboard/DashboardPage";
+import { ReservationsPage } from "@/pages/reservations/ReservationsPage";
+import { CreateReservationPage } from "@/pages/reservations/CreateReservationPage";
+import { PendingPage } from "@/pages/reservations/PendingPage";
+import { HistoryPage } from "@/pages/reservations/HistoryPage";
+import { UserManagementPage } from "@/pages/users/UserManagementPage";
 
 function App() {
   return (
@@ -21,9 +21,12 @@ function App() {
         <Route path="/" element={<AppLayout />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="users" element={<CreateUserPage />} />
+          <Route path="users" element={<UserManagementPage />} />
           <Route path="reservations" element={<ReservationsPage />} />
-          <Route path="reservations/create" element={<CreateReservationPage />} />
+          <Route
+            path="reservations/create"
+            element={<CreateReservationPage />}
+          />
           <Route path="reservations/pending" element={<PendingPage />} />
           <Route path="reservations/history" element={<HistoryPage />} />
         </Route>

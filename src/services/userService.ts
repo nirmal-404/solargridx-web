@@ -1,17 +1,37 @@
 // Smart Solar Microgrid Trading System - Staff User Management Service
-import { apiClient } from './apiClient';
-import type { CreateUserRequest, User } from '@/types/auth';
+import { apiClient } from "./apiClient";
+import type {
+  CreateUserRequest,
+  PaginatedStaffResponse,
+  User,
+} from "@/types/auth";
 
 export const userService = {
-  // Retrieves all staff accounts (Backoffice and GridOperator)
-  async getStaffUsers(): Promise<User[]> {
-    const response = await apiClient.get<User[]>('/staff');
+  async getStaffUsers(params?: {
+    search?: string;
+    role?: "Backoffice" | "GridOperator";
+    status?: string;
+    sortField?: "name" | "email" | "role" | "status";
+    sortOrder?: "asc" | "desc";
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedStaffResponse> {
+    const response = await apiClient.get<PaginatedStaffResponse>("/staff", {
+      params: {
+        search: params?.search || undefined,
+        role: params?.role || undefined,
+        status: params?.status || undefined,
+        sortField: params?.sortField || "name",
+        sortOrder: params?.sortOrder || "asc",
+        page: params?.page ?? 1,
+        limit: params?.limit ?? 10,
+      },
+    });
     return response.data;
   },
 
-  // Creates a new staff account with GridOperator or Backoffice role
   async createStaffUser(request: CreateUserRequest): Promise<User> {
-    const response = await apiClient.post<User>('/staff', request);
+    const response = await apiClient.post<User>("/staff", request);
     return response.data;
   },
 };
