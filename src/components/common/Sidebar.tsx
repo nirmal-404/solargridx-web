@@ -8,6 +8,7 @@ import {
   Clock,
   History,
   Zap,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +21,12 @@ export function Sidebar() {
       path: '/dashboard',
       icon: LayoutDashboard,
       roles: ['Prosumer', 'Backoffice', 'GridOperator'],
+    },
+    {
+      label: 'User Management',
+      path: '/users',
+      icon: Users,
+      roles: ['Backoffice'],
     },
     {
       label: 'All Reservations',

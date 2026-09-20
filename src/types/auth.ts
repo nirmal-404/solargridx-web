@@ -38,3 +38,12 @@ export interface RegisterRequest {
   phone?: string;
   address?: string;
 }
+
+export interface CreateUserRequest {
+  role: 'Backoffice' | 'GridOperator';
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}
+

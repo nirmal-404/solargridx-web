@@ -8,6 +8,7 @@ import { ReservationsPage } from '@/pages/reservations/ReservationsPage';
 import { CreateReservationPage } from '@/pages/reservations/CreateReservationPage';
 import { PendingPage } from '@/pages/reservations/PendingPage';
 import { HistoryPage } from '@/pages/reservations/HistoryPage';
+import { CreateUserPage } from '@/pages/users/CreateUserPage';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/" element={<AppLayout />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="users" element={<CreateUserPage />} />
           <Route path="reservations" element={<ReservationsPage />} />
           <Route path="reservations/create" element={<CreateReservationPage />} />
           <Route path="reservations/pending" element={<PendingPage />} />
