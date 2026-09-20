@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AppLayout } from "@/layouts/AppLayout";
 import { LoginPage } from "@/pages/auth/LoginPage";
+import { RegisterPage } from "@/pages/auth/RegisterPage";
 import { DashboardPage } from "@/pages/dashboard/DashboardPage";
 import { ReservationsPage } from "@/pages/reservations/ReservationsPage";
 import { CreateReservationPage } from "@/pages/reservations/CreateReservationPage";
@@ -14,8 +15,9 @@ function App() {
   return (
     <AuthProvider>
       <Routes>
-        {/* Public Authentication Route */}
+        {/* Public Authentication Routes */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
         {/* Protected Enterprise Portal Routes */}
         <Route path="/" element={<AppLayout />}>
