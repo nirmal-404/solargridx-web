@@ -1,8 +1,12 @@
 // Smart Solar Microgrid Trading System - Authentication and User Type Definitions
 
-export type UserRole = 'Prosumer' | 'Backoffice' | 'GridOperator';
+export type UserRole = "Prosumer" | "Backoffice" | "GridOperator";
 
-export type AccountStatus = 'Pending' | 'Active' | 'DeactivationRequested' | 'Deactivated';
+export type AccountStatus =
+  | "Pending"
+  | "Active"
+  | "DeactivationRequested"
+  | "Deactivated";
 
 export interface User {
   id: string;
@@ -37,4 +41,51 @@ export interface RegisterRequest {
   lastName: string;
   phone?: string;
   address?: string;
+}
+
+export interface CreateUserRequest {
+  role: "Backoffice" | "GridOperator";
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  nic?: string;
+  address?: string;
+}
+
+export interface CreateProsumerRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  nic: string;
+  address?: string;
+}
+
+export interface StaffListFilters {
+  search: string;
+  role: "All" | "Backoffice" | "GridOperator";
+  status: "All" | AccountStatus;
+  sortField: "name" | "email" | "role" | "status";
+  sortOrder: "asc" | "desc";
+  page: number;
+  limit: number;
+}
+
+export interface PaginatedStaffResponse {
+  items: User[];
+  page: number;
+  limit: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+export interface PaginatedProsumerResponse {
+  items: User[];
+  page: number;
+  limit: number;
+  totalCount: number;
+  totalPages: number;
 }

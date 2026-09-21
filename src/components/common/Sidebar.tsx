@@ -8,10 +8,12 @@ import {
   Clock,
   History,
   Zap,
+  Users,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -23,38 +25,52 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
 
   const navItems = [
     {
-      label: 'Dashboard',
-      path: '/dashboard',
+      label: "Dashboard",
+      path: "/dashboard",
       icon: LayoutDashboard,
-      roles: ['Prosumer', 'Backoffice', 'GridOperator'],
+      roles: ["Prosumer", "Backoffice", "GridOperator"],
     },
     {
-      label: 'All Reservations',
-      path: '/reservations',
+      label: "User Management",
+      path: "/users",
+      icon: Users,
+      roles: ["Backoffice"],
+    },
+    {
+      label: "Prosumer Management",
+      path: "/prosumers",
+      icon: Users,
+      roles: ["Backoffice"],
+    },
+    {
+      label: "All Reservations",
+      path: "/reservations",
       icon: CalendarDays,
-      roles: ['Prosumer', 'Backoffice', 'GridOperator'],
+      roles: ["Prosumer", "Backoffice", "GridOperator"],
     },
     {
-      label: 'Book Energy Slot',
-      path: '/reservations/create',
+      label: "Book Energy Slot",
+      path: "/reservations/create",
       icon: PlusCircle,
-      roles: ['Prosumer'],
+      roles: ["Prosumer"],
     },
     {
-      label: 'Pending Queue',
-      path: '/reservations/pending',
+      label: "Pending Queue",
+      path: "/reservations/pending",
       icon: Clock,
-      roles: ['Backoffice', 'GridOperator'],
+      roles: ["Backoffice", "GridOperator"],
     },
     {
-      label: 'Booking History',
-      path: '/reservations/history',
+      label: "Booking History",
+      path: "/reservations/history",
       icon: History,
-      roles: ['Prosumer', 'Backoffice', 'GridOperator'],
+      roles: ["Prosumer", "Backoffice", "GridOperator"],
     },
   ];
 
-  const visibleItems = navItems.filter((item) => !role || item.roles.includes(role));
+  const visibleItems = navItems.filter(
+    (item) => !role || item.roles.includes(role),
+  );
 
   return (
     <aside
@@ -110,8 +126,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                   'flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-colors w-full',
                   isCollapsed ? 'justify-center px-2' : 'px-3',
                   isActive
-                    ? 'bg-primary text-primary-foreground shadow-xs'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
                 )
               }
             >
