@@ -39,6 +39,82 @@ export const loginFormControls: FormControl[] = [
   },
 ];
 
+export const prosumerUserFormControls: FormControl[] = [
+  {
+    name: "firstName",
+    label: "First Name *",
+    placeholder: "e.g. Jane",
+    componentType: "input",
+    type: "text",
+    validation: z.string().trim().min(1, "First name is required."),
+  },
+  {
+    name: "lastName",
+    label: "Last Name *",
+    placeholder: "e.g. Doe",
+    componentType: "input",
+    type: "text",
+    validation: z.string().trim().min(1, "Last name is required."),
+  },
+  {
+    name: "nic",
+    label: "NIC *",
+    placeholder: "200212312312",
+    componentType: "input",
+    type: "text",
+    validation: z.string().trim().min(1, "NIC is required."),
+  },
+  {
+    name: "email",
+    label: "Email Address *",
+    placeholder: "prosumer@solargridx.com",
+    componentType: "input",
+    type: "email",
+    validation: z
+      .string()
+      .trim()
+      .min(1, "Email is required")
+      .email("Invalid email address"),
+  },
+  {
+    name: "phone",
+    label: "Phone Number",
+    placeholder: "+94771234567",
+    componentType: "phoneInput",
+    validation: z
+      .string()
+      .trim()
+      .optional()
+      .or(z.literal(""))
+      .refine(
+        (value) => !value || value.length >= 9,
+        "Phone number is too short.",
+      ),
+  },
+  {
+    name: "address",
+    label: "Address",
+    placeholder: "123 Main Street",
+    componentType: "textarea",
+    validation: z
+      .string()
+      .trim()
+      .optional()
+      .or(z.literal(""))
+      .refine((value) => !value || value.length >= 5, "Address is too short."),
+  },
+  {
+    name: "password",
+    label: "Password (min 8 chars) *",
+    placeholder: "",
+    componentType: "input",
+    type: "password",
+    validation: z
+      .string()
+      .min(8, "Password must be at least 8 characters long."),
+  },
+];
+
 export const staffUserFormControls: FormControl[] = [
   {
     name: "role",

@@ -54,6 +54,16 @@ export interface CreateUserRequest {
   address?: string;
 }
 
+export interface CreateProsumerRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  nic: string;
+  address?: string;
+}
+
 export interface StaffListFilters {
   search: string;
   role: "All" | "Backoffice" | "GridOperator";
@@ -65,6 +75,14 @@ export interface StaffListFilters {
 }
 
 export interface PaginatedStaffResponse {
+  items: User[];
+  page: number;
+  limit: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+export interface PaginatedProsumerResponse {
   items: User[];
   page: number;
   limit: number;

@@ -52,7 +52,6 @@ export function StaffTablePanel({
   staffUsers,
   page,
   totalPages,
-  totalCount,
   isLoading,
   searchInput,
   onSearchInputChange,

@@ -1,6 +1,6 @@
 // Smart Solar Microgrid Trading System - Navigation Sidebar
-import { NavLink } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { NavLink } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import {
   LayoutDashboard,
   CalendarDays,
@@ -9,52 +9,60 @@ import {
   History,
   Zap,
   Users,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function Sidebar() {
   const { role } = useAuth();
 
   const navItems = [
     {
-      label: 'Dashboard',
-      path: '/dashboard',
+      label: "Dashboard",
+      path: "/dashboard",
       icon: LayoutDashboard,
-      roles: ['Prosumer', 'Backoffice', 'GridOperator'],
+      roles: ["Prosumer", "Backoffice", "GridOperator"],
     },
     {
-      label: 'User Management',
-      path: '/users',
+      label: "User Management",
+      path: "/users",
       icon: Users,
-      roles: ['Backoffice'],
+      roles: ["Backoffice"],
     },
     {
-      label: 'All Reservations',
-      path: '/reservations',
+      label: "Prosumer Management",
+      path: "/prosumers",
+      icon: Users,
+      roles: ["Backoffice"],
+    },
+    {
+      label: "All Reservations",
+      path: "/reservations",
       icon: CalendarDays,
-      roles: ['Prosumer', 'Backoffice', 'GridOperator'],
+      roles: ["Prosumer", "Backoffice", "GridOperator"],
     },
     {
-      label: 'Book Energy Slot',
-      path: '/reservations/create',
+      label: "Book Energy Slot",
+      path: "/reservations/create",
       icon: PlusCircle,
-      roles: ['Prosumer'],
+      roles: ["Prosumer"],
     },
     {
-      label: 'Pending Queue',
-      path: '/reservations/pending',
+      label: "Pending Queue",
+      path: "/reservations/pending",
       icon: Clock,
-      roles: ['Backoffice', 'GridOperator'],
+      roles: ["Backoffice", "GridOperator"],
     },
     {
-      label: 'Booking History',
-      path: '/reservations/history',
+      label: "Booking History",
+      path: "/reservations/history",
       icon: History,
-      roles: ['Prosumer', 'Backoffice', 'GridOperator'],
+      roles: ["Prosumer", "Backoffice", "GridOperator"],
     },
   ];
 
-  const visibleItems = navItems.filter((item) => !role || item.roles.includes(role));
+  const visibleItems = navItems.filter(
+    (item) => !role || item.roles.includes(role),
+  );
 
   return (
     <aside className="flex w-64 flex-col border-r bg-card/50 p-4">
@@ -73,10 +81,10 @@ export function Sidebar() {
               to={item.path}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   isActive
-                    ? 'bg-primary text-primary-foreground shadow-xs'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
                 )
               }
             >
@@ -93,7 +101,8 @@ export function Sidebar() {
           <span>7-Day Booking Horizon</span>
         </div>
         <p className="mt-1 leading-relaxed">
-          Slots are scheduled within 7 days. Changes or cancellations require 12 hours notice.
+          Slots are scheduled within 7 days. Changes or cancellations require 12
+          hours notice.
         </p>
       </div>
     </aside>

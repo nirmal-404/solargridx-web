@@ -10,6 +10,7 @@ import { CreateReservationPage } from "@/pages/reservations/CreateReservationPag
 import { PendingPage } from "@/pages/reservations/PendingPage";
 import { HistoryPage } from "@/pages/reservations/HistoryPage";
 import { UserManagementPage } from "@/pages/users/UserManagementPage";
+import { ProsumerManagementPage } from "@/pages/prosumers/ProsumerManagementPage";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="users" element={<UserManagementPage />} />
+          <Route path="prosumers" element={<ProsumerManagementPage />} />
           <Route path="reservations" element={<ReservationsPage />} />
           <Route
             path="reservations/create"
