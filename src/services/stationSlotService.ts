@@ -1,9 +1,30 @@
 // Smart Solar Microgrid Trading System - Solar Station & Slot API Transport
+// Handles all station CRUD operations and slot queries for the node management domain.
 import { apiClient } from './apiClient';
-import type { EnergyBookingSlot, SolarStation } from '@/types/station';
+import type { OperationalSchedule, SolarStation, EnergyBookingSlot } from '@/types/station';
+
+export interface CreateStationPayload {
+  stationId: string;
+  name: string;
+  description?: string;
+  latitude: number;
+  longitude: number;
+  capacityKwh: number;
+  availableBatteryStorageSlots: number;
+  schedule?: OperationalSchedule;
+}
+
+export interface UpdateStationPayload {
+  name?: string;
+  description?: string;
+  latitude?: number;
+  longitude?: number;
+  capacityKwh?: number;
+  availableBatteryStorageSlots?: number;
+}
 
 export const stationSlotService = {
-  // Returns active solar stations
+  // Returns all stations; includeInactive=true is Backoffice-only on the API side.
   async getStations(includeInactive = false): Promise<SolarStation[]> {
     const response = await apiClient.get<SolarStation[]>('/stations', {
       params: { includeInactive },
@@ -11,7 +32,41 @@ export const stationSlotService = {
     return response.data;
   },
 
-  // Returns slots, optionally filtered by station and bookable availability
+  // Retrieves a single station by its business identifier.
+  async getStation(stationId: string): Promise<SolarStation> {
+    const response = await apiClient.get<SolarStation>(`/stations/${stationId}`);
+    return response.data;
+  },
+
+  // Creates a new station node; requires Backoffice role.
+  async createStation(payload: CreateStationPayload): Promise<SolarStation> {
+    const response = await apiClient.post<SolarStation>('/stations', payload);
+    return response.data;
+  },
+
+  // Updates mutable station fields; null fields are preserved by the API.
+  async updateStation(stationId: string, payload: UpdateStationPayload): Promise<SolarStation> {
+    const response = await apiClient.put<SolarStation>(`/stations/${stationId}`, payload);
+    return response.data;
+  },
+
+  // Replaces the full operational schedule for a station.
+  async updateSchedule(stationId: string, schedule: OperationalSchedule): Promise<SolarStation> {
+    const response = await apiClient.patch<SolarStation>(`/stations/${stationId}/schedule`, { schedule });
+    return response.data;
+  },
+
+  // Deactivates a station; API returns 409 if active reservations block this.
+  async deactivateStation(stationId: string): Promise<void> {
+    await apiClient.post(`/stations/${stationId}/deactivate`);
+  },
+
+  // Restores a deactivated station to Active status.
+  async reactivateStation(stationId: string): Promise<void> {
+    await apiClient.post(`/stations/${stationId}/reactivate`);
+  },
+
+  // Returns slots, optionally filtered by station and bookable availability.
   async getSlots(stationId?: string, availableOnly = true): Promise<EnergyBookingSlot[]> {
     const response = await apiClient.get<EnergyBookingSlot[]>('/slots', {
       params: { stationId, availableOnly },
@@ -19,7 +74,7 @@ export const stationSlotService = {
     return response.data;
   },
 
-  // Returns slots for a specific station
+  // Returns slots for a specific station.
   async getSlotsByStation(stationId: string): Promise<EnergyBookingSlot[]> {
     const response = await apiClient.get<EnergyBookingSlot[]>(`/stations/${stationId}/slots`);
     return response.data;

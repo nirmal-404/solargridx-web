@@ -1,4 +1,4 @@
-﻿// Smart Solar Microgrid Trading System - Navigation Sidebar with fold/unfold toggle
+// Smart Solar Microgrid Trading System - Navigation Sidebar with fold/unfold toggle
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -11,6 +11,8 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
+  Server,
+  Map,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -64,6 +66,18 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       label: "Booking History",
       path: "/reservations/history",
       icon: History,
+      roles: ["Prosumer", "Backoffice", "GridOperator"],
+    },
+    {
+      label: "Node Management",
+      path: "/stations",
+      icon: Server,
+      roles: ["Backoffice"],
+    },
+    {
+      label: "Node Map",
+      path: "/stations/map",
+      icon: Map,
       roles: ["Prosumer", "Backoffice", "GridOperator"],
     },
   ];

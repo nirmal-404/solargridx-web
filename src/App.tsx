@@ -11,6 +11,8 @@ import { PendingPage } from "@/pages/reservations/PendingPage";
 import { HistoryPage } from "@/pages/reservations/HistoryPage";
 import { UserManagementPage } from "@/pages/users/UserManagementPage";
 import { ProsumerManagementPage } from "@/pages/prosumers/ProsumerManagementPage";
+import { NodeManagementPage } from "@/pages/stations/NodeManagementPage";
+import { NodeMapPage } from "@/pages/stations/NodeMapPage";
 
 function App() {
   return (
@@ -33,6 +35,9 @@ function App() {
           />
           <Route path="reservations/pending" element={<PendingPage />} />
           <Route path="reservations/history" element={<HistoryPage />} />
+          {/* Member 2: Microgrid node management and map */}
+          <Route path="stations" element={<NodeManagementPage />} />
+          <Route path="stations/map" element={<NodeMapPage />} />
         </Route>
 
         {/* Fallback Catch-all Route */}
