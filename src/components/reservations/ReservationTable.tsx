@@ -72,6 +72,7 @@ export function ReservationTable({
             <TableHead className="font-semibold">Reservation ID</TableHead>
             {isStaff && <TableHead className="font-semibold">Prosumer NIC</TableHead>}
             <TableHead className="font-semibold">Station ID</TableHead>
+            <TableHead className="font-semibold">Type</TableHead>
             <TableHead className="font-semibold">Scheduled Window</TableHead>
             <TableHead className="font-semibold text-right">Capacity (kWh)</TableHead>
             <TableHead className="font-semibold text-center">Status</TableHead>
@@ -104,6 +105,22 @@ export function ReservationTable({
                 {/* Station */}
                 <TableCell className="font-medium text-foreground">
                   {r.stationId}
+                </TableCell>
+
+                {/* Transfer Type & Notes */}
+                <TableCell>
+                  <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold ${
+                    r.transferType === 'Charging'
+                      ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+                      : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                  }`}>
+                    {r.transferType === 'Charging' ? '🔋 Charging' : '⚡ Drop-Off'}
+                  </span>
+                  {r.notes && (
+                    <span className="block text-[10px] text-muted-foreground truncate max-w-[130px] mt-0.5" title={r.notes}>
+                      {r.notes}
+                    </span>
+                  )}
                 </TableCell>
 
                 {/* Scheduled Times */}

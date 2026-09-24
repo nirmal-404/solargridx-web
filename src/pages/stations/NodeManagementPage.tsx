@@ -10,11 +10,16 @@ import { Button } from '@/components/ui/button';
 import {
   AlertCircle, Check, MapPin, Plus, RefreshCw,
   Zap, Server, ChevronDown, ChevronUp, X, Pencil, PowerOff, Power,
+  Battery,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { stationSlotService, type CreateStationPayload, type UpdateStationPayload } from '@/services/stationSlotService';
+import {
+  stationSlotService,
+  type CreateStationPayload,
+  type UpdateStationPayload,
+} from '@/services/stationSlotService';
 import { parseApiError } from '@/utils/errorParser';
-import type { SolarStation, OperationalSchedule, DailyHours } from '@/types/station';
+import type { SolarStation, OperationalSchedule, DailyHours, EnergyBookingSlot } from '@/types/station';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -24,6 +29,30 @@ type FormMode = 'create' | 'edit' | 'schedule' | null;
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 const EMPTY_SCHEDULE: OperationalSchedule = { days: [] };
+
+function SlotStatusBadge({ status }: { status?: string | null }) {
+  const s = status ?? 'Available';
+  let badgeClass = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400';
+  let dotClass = 'bg-emerald-500';
+
+  if (s === 'Reserved') {
+    badgeClass = 'bg-amber-500/15 text-amber-600 dark:text-amber-400';
+    dotClass = 'bg-amber-500';
+  } else if (s === 'Unavailable' || s === 'Deactivated') {
+    badgeClass = 'bg-muted text-muted-foreground';
+    dotClass = 'bg-muted-foreground';
+  } else if (s === 'Completed') {
+    badgeClass = 'bg-blue-500/15 text-blue-600 dark:text-blue-400';
+    dotClass = 'bg-blue-500';
+  }
+
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${badgeClass}`}>
+      <span className={`size-1.5 rounded-full ${dotClass}`} />
+      {s}
+    </span>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Status badge helper
@@ -271,6 +300,117 @@ export function NodeManagementPage() {
     }
   };
 
+  // ── Battery Slot Management State & Handlers ──────────────────────────────
+  const [selectedStationForSlots, setSelectedStationForSlots] = useState<SolarStation | null>(null);
+  const [stationSlots, setStationSlots] = useState<EnergyBookingSlot[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  const [slotError, setSlotError] = useState<string | null>(null);
+  const [slotSuccess, setSlotSuccess] = useState<string | null>(null);
+
+  // Slot modal state: 'create' | 'edit' | null
+  const [slotModalMode, setSlotModalMode] = useState<'create' | 'edit' | null>(null);
+  const [editingSlot, setEditingSlot] = useState<EnergyBookingSlot | null>(null);
+  const [slotDate, setSlotDate] = useState('2026-09-25');
+  const [slotStartTime, setSlotStartTime] = useState('14:00');
+  const [slotEndTime, setSlotEndTime] = useState('15:00');
+  const [slotCapacity, setSlotCapacity] = useState('10');
+  const [slotAvailableCapacity, setSlotAvailableCapacity] = useState('10');
+  const [isSlotSaving, setIsSlotSaving] = useState(false);
+  const [deactivatingSlotId, setDeactivatingSlotId] = useState<string | null>(null);
+
+  const loadSlotsForStation = async (stationId: string) => {
+    setIsLoadingSlots(true);
+    setSlotError(null);
+    try {
+      const data = await stationSlotService.getSlots(stationId, false);
+      setStationSlots(data);
+    } catch (err) {
+      setSlotError(parseApiError(err, 'Failed to load battery slots.'));
+    } finally {
+      setIsLoadingSlots(false);
+    }
+  };
+
+  const openSlotManagement = (s: SolarStation) => {
+    setSelectedStationForSlots(s);
+    setSlotError(null);
+    setSlotSuccess(null);
+    void loadSlotsForStation(s.stationId);
+  };
+
+  const closeSlotManagement = () => {
+    setSelectedStationForSlots(null);
+    setStationSlots([]);
+    setSlotError(null);
+    setSlotSuccess(null);
+    setSlotModalMode(null);
+  };
+
+  const openCreateSlot = () => {
+    setEditingSlot(null);
+    setSlotDate('2026-09-25');
+    setSlotStartTime('14:00');
+    setSlotEndTime('15:00');
+    setSlotCapacity('10');
+    setSlotAvailableCapacity('10');
+    setSlotModalMode('create');
+  };
+
+  const openEditSlot = (slot: EnergyBookingSlot) => {
+    setEditingSlot(slot);
+    setSlotCapacity(String(slot.capacity));
+    setSlotAvailableCapacity(String(slot.availableCapacity));
+    setSlotModalMode('edit');
+  };
+
+  const handleSaveSlot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedStationForSlots) return;
+    setIsSlotSaving(true);
+    setSlotError(null);
+    try {
+      if (slotModalMode === 'create') {
+        const startIso = new Date(`${slotDate}T${slotStartTime}:00Z`).toISOString();
+        const endIso = new Date(`${slotDate}T${slotEndTime}:00Z`).toISOString();
+        await stationSlotService.createSlot({
+          stationId: selectedStationForSlots.stationId,
+          startTime: startIso,
+          endTime: endIso,
+          capacity: parseFloat(slotCapacity),
+        });
+        setSlotSuccess('Battery slot created successfully.');
+      } else if (slotModalMode === 'edit' && editingSlot) {
+        await stationSlotService.updateSlot(editingSlot.slotId, {
+          capacity: parseFloat(slotCapacity),
+          availableCapacity: slotAvailableCapacity ? parseFloat(slotAvailableCapacity) : undefined,
+        });
+        setSlotSuccess('Slot capacity updated successfully.');
+      }
+      setSlotModalMode(null);
+      await loadSlotsForStation(selectedStationForSlots.stationId);
+    } catch (err) {
+      setSlotError(parseApiError(err, 'Slot operation failed.'));
+    } finally {
+      setIsSlotSaving(false);
+    }
+  };
+
+  const handleDeactivateSlot = async (slot: EnergyBookingSlot) => {
+    if (!selectedStationForSlots) return;
+    setDeactivatingSlotId(slot.slotId);
+    setSlotError(null);
+    setSlotSuccess(null);
+    try {
+      await stationSlotService.deactivateSlot(slot.slotId);
+      setSlotSuccess(`Slot ${slot.slotId} deactivated successfully.`);
+      await loadSlotsForStation(selectedStationForSlots.stationId);
+    } catch (err) {
+      setSlotError(parseApiError(err, 'Failed to deactivate slot.'));
+    } finally {
+      setDeactivatingSlotId(null);
+    }
+  };
+
   // ─────────────────────────────────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────────────────────────────────
@@ -452,6 +592,251 @@ export function NodeManagementPage() {
         </div>
       )}
 
+      {/* ── Battery Slot Management Slide-over Drawer ── */}
+      {selectedStationForSlots && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="flex-1 bg-black/40 backdrop-blur-sm" onClick={closeSlotManagement} />
+          <div className="w-full max-w-3xl overflow-y-auto bg-background shadow-2xl border-l border-border flex flex-col">
+            <div className="flex items-center justify-between border-b p-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Battery className="size-4 text-amber-500" />
+                  <h2 className="text-sm font-semibold text-foreground">
+                    Battery Slots — {selectedStationForSlots.name}
+                  </h2>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Station Node ID: <span className="font-mono font-medium text-foreground">{selectedStationForSlots.stationId}</span> · Total Node Storage: {selectedStationForSlots.capacityKwh} kWh
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={openCreateSlot}
+                  className="gap-1 text-xs h-7 bg-amber-600 hover:bg-amber-700 text-white"
+                  id="btn-create-slot"
+                >
+                  <Plus className="size-3" /> Add Slot
+                </Button>
+                <button onClick={closeSlotManagement} className="text-muted-foreground hover:text-foreground">
+                  <X className="size-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Toasts inside slot drawer */}
+            <div className="p-4 space-y-3 flex-1 flex flex-col">
+              {slotSuccess && (
+                <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-700 dark:text-emerald-400">
+                  <Check className="size-4 shrink-0" /><span>{slotSuccess}</span>
+                  <button onClick={() => setSlotSuccess(null)} className="ml-auto"><X className="size-3" /></button>
+                </div>
+              )}
+              {slotError && (
+                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+                  <AlertCircle className="size-4 shrink-0" /><span>{slotError}</span>
+                  <button onClick={() => setSlotError(null)} className="ml-auto"><X className="size-3" /></button>
+                </div>
+              )}
+
+              {/* Slot Table */}
+              <div className="rounded-lg border bg-card overflow-hidden flex-1">
+                {isLoadingSlots ? (
+                  <div className="flex items-center justify-center p-12 text-xs text-muted-foreground gap-2">
+                    <RefreshCw className="size-4 animate-spin" /> Loading battery slots…
+                  </div>
+                ) : stationSlots.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center p-12 text-center">
+                    <Battery className="size-8 text-muted-foreground/30 mb-2" />
+                    <p className="text-xs text-muted-foreground">No battery booking slots created for this microgrid station yet.</p>
+                    <Button size="sm" onClick={openCreateSlot} className="mt-3 text-xs gap-1 h-7">
+                      <Plus className="size-3" /> Create First Slot
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-left">
+                      <thead className="bg-muted/40 border-b border-border text-[11px] text-muted-foreground font-semibold">
+                        <tr>
+                          <th className="py-2.5 px-3">Slot ID</th>
+                          <th className="py-2.5 px-3">Date</th>
+                          <th className="py-2.5 px-3">Start Time</th>
+                          <th className="py-2.5 px-3">End Time</th>
+                          <th className="py-2.5 px-3 text-right">Available (kWh)</th>
+                          <th className="py-2.5 px-3 text-right">Max (kWh)</th>
+                          <th className="py-2.5 px-3 text-center">Status</th>
+                          <th className="py-2.5 px-3 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {stationSlots.map((slot) => {
+                          const dateStr = slot.startTime ? new Date(slot.startTime).toISOString().slice(0, 10) : '—';
+                          const startTimeStr = slot.startTime ? new Date(slot.startTime).toISOString().slice(11, 16) : '—';
+                          const endTimeStr = slot.endTime ? new Date(slot.endTime).toISOString().slice(11, 16) : '—';
+                          const isDeactivating = deactivatingSlotId === slot.slotId;
+
+                          return (
+                            <tr key={slot.slotId} className="hover:bg-muted/30 transition-colors">
+                              <td className="py-2.5 px-3 font-mono font-medium text-foreground">{slot.slotId}</td>
+                              <td className="py-2.5 px-3 text-muted-foreground">{dateStr}</td>
+                              <td className="py-2.5 px-3 text-muted-foreground">{startTimeStr}</td>
+                              <td className="py-2.5 px-3 text-muted-foreground">{endTimeStr}</td>
+                              <td className="py-2.5 px-3 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                                {slot.availableCapacity.toFixed(1)}
+                              </td>
+                              <td className="py-2.5 px-3 text-right font-mono text-muted-foreground">
+                                {slot.capacity.toFixed(1)}
+                              </td>
+                              <td className="py-2.5 px-3 text-center">
+                                <SlotStatusBadge status={slot.computedStatus ?? (slot.status === 'Active' ? (slot.availableCapacity > 0 ? 'Available' : 'Reserved') : 'Unavailable')} />
+                              </td>
+                              <td className="py-2.5 px-3 text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  <button
+                                    id={`btn-edit-slot-${slot.slotId}`}
+                                    title="Edit capacity"
+                                    onClick={() => openEditSlot(slot)}
+                                    className="rounded p-1 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                                  >
+                                    <Pencil className="size-3" />
+                                  </button>
+                                  {slot.status === 'Active' && (
+                                    <button
+                                      id={`btn-deactivate-slot-${slot.slotId}`}
+                                      title="Deactivate slot"
+                                      disabled={isDeactivating}
+                                      onClick={() => void handleDeactivateSlot(slot)}
+                                      className="rounded p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                    >
+                                      {isDeactivating ? <RefreshCw className="size-3 animate-spin" /> : <PowerOff className="size-3" />}
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Create / Edit Battery Slot Modal ── */}
+      {slotModalMode && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-xs" onClick={() => setSlotModalMode(null)} />
+          <div className="relative w-full max-w-sm rounded-xl border border-border bg-background p-5 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="text-sm font-semibold text-foreground">
+                {slotModalMode === 'create' ? '+ Create Battery Slot' : `Edit Capacity — ${editingSlot?.slotId}`}
+              </h3>
+              <button onClick={() => setSlotModalMode(null)} className="text-muted-foreground hover:text-foreground">
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <form onSubmit={(e) => void handleSaveSlot(e)} className="space-y-3 text-xs">
+              {slotModalMode === 'create' ? (
+                <>
+                  <div>
+                    <label className="font-medium text-muted-foreground block mb-1">Date *</label>
+                    <input
+                      type="date"
+                      required
+                      value={slotDate}
+                      onChange={(e) => setSlotDate(e.target.value)}
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="font-medium text-muted-foreground block mb-1">Start Time *</label>
+                      <input
+                        type="time"
+                        required
+                        value={slotStartTime}
+                        onChange={(e) => setSlotStartTime(e.target.value)}
+                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-medium text-muted-foreground block mb-1">End Time *</label>
+                      <input
+                        type="time"
+                        required
+                        value={slotEndTime}
+                        onChange={(e) => setSlotEndTime(e.target.value)}
+                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="font-medium text-muted-foreground block mb-1">Capacity (kWh) *</label>
+                    <input
+                      type="number"
+                      required
+                      step="0.01"
+                      min="0.01"
+                      value={slotCapacity}
+                      onChange={(e) => setSlotCapacity(e.target.value)}
+                      placeholder="10"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="font-medium text-muted-foreground block mb-1">Total Capacity (kWh) *</label>
+                    <input
+                      type="number"
+                      required
+                      step="0.01"
+                      min="0.01"
+                      value={slotCapacity}
+                      onChange={(e) => setSlotCapacity(e.target.value)}
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-medium text-muted-foreground block mb-1">Available Capacity (kWh) *</label>
+                    <input
+                      type="number"
+                      required
+                      step="0.01"
+                      min="0.01"
+                      value={slotAvailableCapacity}
+                      onChange={(e) => setSlotAvailableCapacity(e.target.value)}
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                </>
+              )}
+
+              {slotError && (
+                <p className="flex items-center gap-1.5 text-xs text-destructive">
+                  <AlertCircle className="size-3.5" />{slotError}
+                </p>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <Button type="submit" disabled={isSlotSaving} className="flex-1 text-xs h-8" id="btn-submit-slot">
+                  {isSlotSaving ? 'Saving…' : slotModalMode === 'create' ? 'Create Slot' : 'Update Capacity'}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setSlotModalMode(null)} className="text-xs h-8">
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ── Station table ── */}
       <Card className="border shadow-xs">
         <CardHeader>
@@ -504,6 +889,15 @@ export function NodeManagementPage() {
 
                     {/* ── Row actions ── */}
                     <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        id={`btn-slots-${s.stationId}`}
+                        title="Manage battery slots"
+                        onClick={() => openSlotManagement(s)}
+                        className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 font-medium"
+                      >
+                        <Battery className="size-3" />
+                        Battery Slots
+                      </button>
                       <button
                         title="Toggle schedule"
                         onClick={() => setExpandedId(expandedId === s.stationId ? null : s.stationId)}

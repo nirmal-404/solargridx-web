@@ -23,6 +23,10 @@ export interface ReservationResponse {
   cancelledAt?: string | null;
   completedAt?: string | null;
   prosumerNic?: string | null;
+  transferType?: string | null;
+  notes?: string | null;
+  approvedByUserId?: string | null;
+  completedByUserId?: string | null;
 }
 
 export interface CreateReservationRequest {

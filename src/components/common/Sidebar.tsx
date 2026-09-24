@@ -72,7 +72,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       label: "Node Management",
       path: "/stations",
       icon: Server,
-      roles: ["Backoffice"],
+      roles: ["Backoffice", "GridOperator"],
     },
     {
       label: "Node Map",
