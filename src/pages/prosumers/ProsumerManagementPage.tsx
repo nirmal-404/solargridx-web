@@ -311,19 +311,42 @@ export function ProsumerManagementPage() {
     );
   };
 
-  const handleStatusToggle = async (user: User) => {
+  const handleStatusToggle = async (
+    user: User,
+    desiredStatus?: "Active" | "Deactivated",
+  ) => {
     const nextStatus =
-      user.accountStatus === "Active" ? "Deactivated" : "Active";
+      desiredStatus ??
+      (user.accountStatus === "Active" ? "Deactivated" : "Active");
     try {
       await userService.updateProsumerStatus(user.id, nextStatus);
-      await refreshProsumerUsers(
-        page,
-        search,
-        statusFilter,
-        sortField,
-        sortOrder,
-        limit,
+      const name = `${user.firstName} ${user.lastName}`.trim();
+      setSuccessMessage(
+        `Account for ${name} (NIC: ${user.nic ?? "N/A"}) is now ${nextStatus}.`,
       );
+
+      // Update in-place so the row updates immediately and data is preserved
+      setProsumerUsers((prev) =>
+        prev.map((u) =>
+          u.id === user.id ? { ...u, accountStatus: nextStatus } : u,
+        ),
+      );
+
+      // If filtered by a specific status that no longer includes this user, reset filter to All so data doesn't vanish
+      if (statusFilter !== "All" && statusFilter !== nextStatus) {
+        setStatusFilter("All");
+        setDraftStatusFilter("All");
+        await refreshProsumerUsers(1, search, "All", sortField, sortOrder, limit);
+      } else {
+        await refreshProsumerUsers(
+          page,
+          search,
+          statusFilter,
+          sortField,
+          sortOrder,
+          limit,
+        );
+      }
     } catch (err: unknown) {
       setErrorMessage(parseApiError(err, "Failed to update prosumer status."));
     }
@@ -398,6 +421,29 @@ export function ProsumerManagementPage() {
         <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
           <AlertCircle className="size-4 shrink-0" />
           <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {prosumerUsers.some((u) => u.accountStatus === "DeactivationRequested") && (
+        <div className="flex items-center justify-between rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="size-4 shrink-0" />
+            <span>
+              There are active deactivation request(s) awaiting administrative review.
+            </span>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-[11px] border-amber-500/30 bg-amber-500/20 text-amber-900 dark:text-amber-200"
+            onClick={() => {
+              setStatusFilter("DeactivationRequested");
+              setDraftStatusFilter("DeactivationRequested");
+              void refreshProsumerUsers(1, search, "DeactivationRequested", sortField, sortOrder, limit);
+            }}
+          >
+            View Deactivation Requests
+          </Button>
         </div>
       )}
 
@@ -586,27 +632,62 @@ export function ProsumerManagementPage() {
                         <TableCell>
                           <Badge
                             variant="outline"
-                            className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px]"
+                            className={
+                              user.accountStatus === "Active"
+                                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px]"
+                                : user.accountStatus === "DeactivationRequested"
+                                ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px]"
+                                : user.accountStatus === "Pending"
+                                ? "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px]"
+                                : "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px]"
+                            }
                           >
-                            {user.accountStatus}
+                            {user.accountStatus === "DeactivationRequested"
+                              ? "Deactivation Requested"
+                              : user.accountStatus}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            type="button"
-                            variant={
-                              user.accountStatus === "Active"
-                                ? "destructive"
-                                : "default"
-                            }
-                            size="sm"
-                            className="h-7 px-2 text-[10px]"
-                            onClick={() => void handleStatusToggle(user)}
-                          >
-                            {user.accountStatus === "Active"
-                              ? "Deactivate"
-                              : "Activate"}
-                          </Button>
+                          {user.accountStatus === "DeactivationRequested" ? (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                className="h-7 px-2 text-[10px]"
+                                title="Approve deactivation request"
+                                onClick={() => void handleStatusToggle(user, "Deactivated")}
+                              >
+                                Approve Deactivation
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2 text-[10px]"
+                                title="Reject request and keep active"
+                                onClick={() => void handleStatusToggle(user, "Active")}
+                              >
+                                Reject Request
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant={
+                                user.accountStatus === "Active"
+                                  ? "destructive"
+                                  : "default"
+                              }
+                              size="sm"
+                              className="h-7 px-2 text-[10px]"
+                              onClick={() => void handleStatusToggle(user)}
+                            >
+                              {user.accountStatus === "Active"
+                                ? "Deactivate"
+                                : "Activate"}
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
