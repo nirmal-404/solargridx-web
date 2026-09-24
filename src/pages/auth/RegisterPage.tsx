@@ -96,7 +96,7 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-muted/30 p-6">
+    <div className="flex min-h-svh justify-center bg-muted/30 px-6 py-10 overflow-y-auto">
       <div className="w-full max-w-2xl space-y-6">
         <div className="text-center space-y-2">
           <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md">
