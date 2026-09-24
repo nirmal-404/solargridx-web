@@ -88,4 +88,10 @@ export const userService = {
     );
     return response.data;
   },
+
+  async getPendingProsumers(): Promise<User[]> {
+    const response = await apiClient.get<User[]>("/prosumers/pending");
+    return response.data;
+  },
 };
+
