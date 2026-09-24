@@ -7,7 +7,6 @@ import {
   PlusCircle,
   Clock,
   History,
-  Zap,
   Users,
   ChevronLeft,
   ChevronRight,
@@ -22,10 +21,18 @@ interface SidebarProps {
   onToggle: () => void;
 }
 
+interface NavItem {
+  label: string;
+  path: string;
+  icon: React.ComponentType<{ className?: string }>;
+  roles: string[];
+  exact?: boolean;
+}
+
 export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const { role } = useAuth();
 
-  const navItems = [
+  const navItems: NavItem[] = [
     {
       label: "Dashboard",
       path: "/dashboard",
@@ -49,6 +56,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       path: "/reservations",
       icon: CalendarDays,
       roles: ["Prosumer", "Backoffice", "GridOperator"],
+      exact: true,
     },
     {
       label: "Book Energy Slot",
@@ -73,6 +81,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       path: "/stations",
       icon: Server,
       roles: ["Backoffice", "GridOperator"],
+      exact: true,
     },
     {
       label: "Node Map",
@@ -134,7 +143,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
               key={item.path}
               to={item.path}
               title={isCollapsed ? item.label : undefined}
-              end={item.path === '/reservations'}
+              end={item.exact ?? (item.path === '/reservations' || item.path === '/stations')}
               className={({ isActive }) =>
                 cn(
                   'flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-colors w-full',
@@ -151,31 +160,6 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           );
         })}
       </nav>
-
-      {/* ── Footer Info Card ── */}
-      <div className="p-3">
-        <div
-          className={cn(
-            'rounded-xl border bg-muted/30 text-xs text-muted-foreground',
-            isCollapsed ? 'p-2 text-center' : 'p-3.5'
-          )}
-        >
-          <div
-            className={cn(
-              'flex items-center font-medium text-foreground',
-              isCollapsed ? 'justify-center' : 'gap-1.5'
-            )}
-          >
-            <Zap className="size-3.5 text-amber-500 shrink-0" />
-            {!isCollapsed && <span>7-Day Horizon</span>}
-          </div>
-          {!isCollapsed && (
-            <p className="mt-1 leading-relaxed">
-              Slots are within 7 days. 12h cancellation notice required.
-            </p>
-          )}
-        </div>
-      </div>
     </aside>
   );
 }
