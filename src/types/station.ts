@@ -36,4 +36,6 @@ export interface EnergyBookingSlot {
   capacity: number;
   availableCapacity: number;
   status: SlotStatus;
+  stationName?: string | null;
+  computedStatus?: string | null;
 }

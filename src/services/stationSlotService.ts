@@ -23,6 +23,20 @@ export interface UpdateStationPayload {
   availableBatteryStorageSlots?: number;
 }
 
+export interface CreateSlotPayload {
+  stationId: string;
+  startTime: string;
+  endTime: string;
+  capacity: number;
+}
+
+export interface UpdateSlotPayload {
+  startTime?: string;
+  endTime?: string;
+  capacity?: number;
+  availableCapacity?: number;
+}
+
 export const stationSlotService = {
   // Returns all stations; includeInactive=true is Backoffice-only on the API side.
   async getStations(includeInactive = false): Promise<SolarStation[]> {
@@ -78,5 +92,22 @@ export const stationSlotService = {
   async getSlotsByStation(stationId: string): Promise<EnergyBookingSlot[]> {
     const response = await apiClient.get<EnergyBookingSlot[]>(`/stations/${stationId}/slots`);
     return response.data;
+  },
+
+  // Creates a new battery booking slot for a station node.
+  async createSlot(payload: CreateSlotPayload): Promise<EnergyBookingSlot> {
+    const response = await apiClient.post<EnergyBookingSlot>('/slots', payload);
+    return response.data;
+  },
+
+  // Updates mutable slot attributes such as capacity and times.
+  async updateSlot(slotId: string, payload: UpdateSlotPayload): Promise<EnergyBookingSlot> {
+    const response = await apiClient.put<EnergyBookingSlot>(`/slots/${slotId}`, payload);
+    return response.data;
+  },
+
+  // Deactivates a slot; API returns 409 if active reservations block this.
+  async deactivateSlot(slotId: string): Promise<void> {
+    await apiClient.post(`/slots/${slotId}/deactivate`);
   },
 };

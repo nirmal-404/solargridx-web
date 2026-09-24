@@ -126,7 +126,7 @@ export function PendingPage() {
         open={!!selectedForApprove}
         onOpenChange={(open) => !open && setSelectedForApprove(null)}
         title="Approve Energy Reservation"
-        description={`Confirm approval for ${selectedForApprove?.reservationId} (${selectedForApprove?.requestedCapacity} kWh)? A QR verification hash will be created.`}
+        description={`Confirm approval for ${selectedForApprove?.reservationId} (${selectedForApprove?.requestedCapacity} kWh, Type: ${selectedForApprove?.transferType ?? 'Drop-Off'}${selectedForApprove?.notes ? `, Notes: "${selectedForApprove.notes}"` : ''})? A QR verification hash will be created.`}
         confirmText="Approve"
         variant="default"
         isLoading={isProcessing}
