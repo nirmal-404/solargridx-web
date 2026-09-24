@@ -1,7 +1,7 @@
 // Smart Solar Microgrid Trading System - Registration Page
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AlertCircle, CheckCircle2, SunMedium } from "lucide-react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -98,16 +98,19 @@ export function RegisterPage() {
   return (
     <div className="flex min-h-svh justify-center bg-muted/30 px-6 py-10 overflow-y-auto">
       <div className="w-full max-w-2xl space-y-6">
-        <div className="text-center space-y-2">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md">
-            <SunMedium className="size-7" />
+        <div className="text-center space-y-3">
+          <div className="flex justify-center">
+            <img
+              src="/logo.png"
+              alt="SolarGridX Logo"
+              className="h-24 w-auto object-contain drop-shadow-sm"
+            />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          <h1 className="text-xl font-bold tracking-tight text-foreground">
             Register Your Account
           </h1>
           <p className="text-xs text-muted-foreground">
-            Create your SolarGridX prosumer profile to access the trading
-            platform
+            Create your SolarGridX prosumer profile to access the trading platform
           </p>
         </div>
 

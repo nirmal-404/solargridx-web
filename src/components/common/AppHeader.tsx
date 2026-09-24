@@ -1,8 +1,8 @@
-﻿// Smart Solar Microgrid Trading System - Application Top Header
+// Smart Solar Microgrid Trading System - Application Top Header
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { SunMedium, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { Breadcrumb } from '@/components/common/Breadcrumb';
 
 export function AppHeader() {
@@ -24,11 +24,17 @@ export function AppHeader() {
     <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b bg-card/80 px-4 md:px-6 backdrop-blur-md">
       {/* Left: Logo + Breadcrumb */}
       <div className="flex items-center gap-3">
-        <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm shrink-0">
-          <SunMedium className="size-5" />
-        </div>
-        <div className="hidden md:flex items-center border-r pr-4 mr-1 h-6">
-          <span className="text-base font-semibold tracking-tight text-foreground">SolarGridX</span>
+        <div className="flex items-center gap-2.5 shrink-0">
+          <img
+            src="/logo-emblem.png"
+            alt="SolarGridX Logo"
+            className="size-8 object-contain shrink-0"
+          />
+          <div className="hidden md:flex items-center border-r pr-4 mr-1 h-6">
+            <span className="text-base font-bold tracking-tight text-foreground">
+              Solar<span className="text-[#0284C7]">Grid</span><span className="text-[#10B981]">X</span>
+            </span>
+          </div>
         </div>
         <Breadcrumb />
       </div>

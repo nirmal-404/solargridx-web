@@ -26,7 +26,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const cached = localStorage.getItem('solargridx_user');
     if (cached) {
       try {
-        return JSON.parse(cached);
+        const parsed = JSON.parse(cached);
+        // Prosumers are mobile-only; clean up any existing prosumer web session
+        if (parsed.role === 'Prosumer') {
+          localStorage.removeItem('solargridx_token');
+          localStorage.removeItem('solargridx_user');
+          return null;
+        }
+        return parsed;
       } catch {
         return null;
       }
@@ -44,6 +51,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       try {
         const profile = await authService.getCurrentUser();
+        // If current profile is Prosumer, disallow web access
+        if (profile.role === 'Prosumer') {
+          localStorage.removeItem('solargridx_token');
+          localStorage.removeItem('solargridx_user');
+          setToken(null);
+          setUser(null);
+          return;
+        }
         setUser(profile);
         localStorage.setItem('solargridx_user', JSON.stringify(profile));
       } catch {
@@ -63,6 +78,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const response = await authService.login(credentials);
+      // Strictly prevent Prosumers from accessing the web portal
+      if (response.user.role === 'Prosumer') {
+        localStorage.removeItem('solargridx_token');
+        localStorage.removeItem('solargridx_user');
+        setToken(null);
+        setUser(null);
+        throw new Error(
+          'Prosumer accounts can only log in via the SolarGridX Android mobile application. Web portal access is restricted to Backoffice and Grid Operator staff.'
+        );
+      }
+
       const authToken = response.accessToken || response.token || '';
       localStorage.setItem('solargridx_token', authToken);
       localStorage.setItem('solargridx_user', JSON.stringify(response.user));

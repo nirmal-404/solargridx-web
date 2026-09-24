@@ -9,6 +9,7 @@ import {
   Check,
   Navigation,
   Crosshair,
+  Search,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { SolarStation } from '@/types/station';
@@ -26,13 +27,13 @@ interface LocationPickerModalProps {
 
 const PRESET_REGIONS = [
   { name: 'Colombo', lat: 6.9271, lng: 79.8612 },
+  { name: 'Mirigama / Meerigama', lat: 7.2436, lng: 80.1293 },
+  { name: 'Gampaha', lat: 7.0840, lng: 79.9926 },
   { name: 'Kandy', lat: 7.2906, lng: 80.6337 },
   { name: 'Galle', lat: 6.0535, lng: 80.2210 },
   { name: 'Negombo', lat: 7.2008, lng: 79.8736 },
-  { name: 'Jaffna', lat: 9.6615, lng: 80.0255 },
   { name: 'Kurunegala', lat: 7.4863, lng: 80.3623 },
-  { name: 'Batticaloa', lat: 7.7102, lng: 81.6924 },
-  { name: 'Anuradhapura', lat: 8.3114, lng: 80.4037 },
+  { name: 'Jaffna', lat: 9.6615, lng: 80.0255 },
 ];
 
 export function LocationPickerModal({
@@ -57,6 +58,8 @@ export function LocationPickerModal({
 
   const [isLocating, setIsLocating] = useState(false);
   const [locateError, setLocateError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<import('leaflet').Map | null>(null);
@@ -253,6 +256,50 @@ export function LocationPickerModal({
     );
   };
 
+  const handleSearchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return;
+
+    // Check presets first
+    const matchedPreset = PRESET_REGIONS.find((p) =>
+      p.name.toLowerCase().includes(query)
+    );
+    if (matchedPreset) {
+      handleSelectPreset(matchedPreset);
+      return;
+    }
+
+    setIsSearching(true);
+    setLocateError(null);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          searchQuery
+        )}&countrycodes=lk&limit=1`
+      );
+      const data = await res.json();
+      if (data && data.length > 0) {
+        const lat = parseFloat(parseFloat(data[0].lat).toFixed(6));
+        const lng = parseFloat(parseFloat(data[0].lon).toFixed(6));
+        setSelectedCoords({ lat, lng });
+
+        if (leafletMapRef.current) {
+          leafletMapRef.current.setView([lat, lng], 14);
+        }
+        if (activeMarkerRef.current) {
+          activeMarkerRef.current.setLatLng([lat, lng]);
+        }
+      } else {
+        setLocateError(`Could not find "${searchQuery}" in Sri Lanka.`);
+      }
+    } catch (err) {
+      setLocateError('Search service currently unreachable.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   const handleConfirm = () => {
     onSelectLocation(selectedCoords.lat, selectedCoords.lng);
     onClose();
@@ -277,7 +324,7 @@ export function LocationPickerModal({
                 Select Station Location
               </h2>
               <p className="text-xs text-muted-foreground">
-                Click anywhere on the map or drag the pin to set the exact microgrid coordinates.
+                Click anywhere on the map, search a town, or drag the pin to set the exact microgrid coordinates.
               </p>
             </div>
           </div>
@@ -290,8 +337,42 @@ export function LocationPickerModal({
           </button>
         </div>
 
-        {/* Toolbar: Quick Jump & Geolocation */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-muted/10 px-4 py-2">
+        {/* Toolbar: Search, Presets & Geolocation */}
+        <div className="flex flex-col gap-2 border-b bg-muted/10 px-4 py-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            {/* Search Input */}
+            <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-xs min-w-[200px]">
+              <Search className="absolute left-2.5 top-2 size-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search town (e.g. Meerigama, Galle)..."
+                className="w-full rounded-md border border-border bg-background pl-8 pr-14 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <button
+                type="submit"
+                disabled={isSearching}
+                className="absolute right-1 top-1 px-1.5 py-0.5 text-[10px] font-medium rounded bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+              >
+                {isSearching ? '…' : 'Go'}
+              </button>
+            </form>
+
+            {/* Locate Me Button */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleLocateMe}
+              disabled={isLocating}
+              className="h-7 text-xs gap-1.5"
+            >
+              <Crosshair className={`size-3.5 ${isLocating ? 'animate-spin' : ''}`} />
+              {isLocating ? 'Locating…' : 'My Current Location'}
+            </Button>
+          </div>
+
           {/* Quick Preset Buttons */}
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
@@ -308,19 +389,6 @@ export function LocationPickerModal({
               </button>
             ))}
           </div>
-
-          {/* Locate Me Button */}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleLocateMe}
-            disabled={isLocating}
-            className="h-7 text-xs gap-1.5"
-          >
-            <Crosshair className={`size-3.5 ${isLocating ? 'animate-spin' : ''}`} />
-            {isLocating ? 'Locating…' : 'My Current Location'}
-          </Button>
         </div>
 
         {locateError && (

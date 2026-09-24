@@ -4,7 +4,6 @@ import { useAuth } from '@/hooks/useAuth';
 import {
   LayoutDashboard,
   CalendarDays,
-  PlusCircle,
   Clock,
   History,
   Users,
@@ -37,7 +36,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       label: "Dashboard",
       path: "/dashboard",
       icon: LayoutDashboard,
-      roles: ["Prosumer", "Backoffice", "GridOperator"],
+      roles: ["Backoffice", "GridOperator"],
     },
     {
       label: "User Management",
@@ -55,14 +54,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       label: "All Reservations",
       path: "/reservations",
       icon: CalendarDays,
-      roles: ["Prosumer", "Backoffice", "GridOperator"],
+      roles: ["Backoffice", "GridOperator"],
       exact: true,
-    },
-    {
-      label: "Book Energy Slot",
-      path: "/reservations/create",
-      icon: PlusCircle,
-      roles: ["Prosumer"],
     },
     {
       label: "Pending Queue",
@@ -74,7 +67,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       label: "Booking History",
       path: "/reservations/history",
       icon: History,
-      roles: ["Prosumer", "Backoffice", "GridOperator"],
+      roles: ["Backoffice", "GridOperator"],
     },
     {
       label: "Node Management",
@@ -87,7 +80,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       label: "Node Map",
       path: "/stations/map",
       icon: Map,
-      roles: ["Prosumer", "Backoffice", "GridOperator"],
+      roles: ["Backoffice", "GridOperator"],
     },
   ];
 
@@ -110,9 +103,12 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         )}
       >
         {!isCollapsed && (
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate pr-2">
-            Microgrid Portal
-          </p>
+          <div className="flex items-center gap-2 truncate pr-2">
+            <img src="/logo-emblem.png" alt="SolarGridX Logo" className="size-5 object-contain shrink-0" />
+            <span className="text-xs font-bold tracking-tight text-foreground truncate">
+              Solar<span className="text-[#0284C7]">Grid</span><span className="text-[#10B981]">X</span>
+            </span>
+          </div>
         )}
 
         {/* Fold / Unfold button lives inside the sidebar */}
