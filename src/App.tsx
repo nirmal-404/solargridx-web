@@ -13,6 +13,7 @@ import { UserManagementPage } from "@/pages/users/UserManagementPage";
 import { ProsumerManagementPage } from "@/pages/prosumers/ProsumerManagementPage";
 import { NodeManagementPage } from "@/pages/stations/NodeManagementPage";
 import { NodeMapPage } from "@/pages/stations/NodeMapPage";
+import { ProfilePage } from "@/pages/auth/ProfilePage";
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
           {/* Member 2: Microgrid node management and map */}
           <Route path="stations" element={<NodeManagementPage />} />
           <Route path="stations/map" element={<NodeMapPage />} />
+          <Route path="profile" element={<ProfilePage />} />
         </Route>
 
         {/* Fallback Catch-all Route */}
