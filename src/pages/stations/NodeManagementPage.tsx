@@ -20,6 +20,7 @@ import {
 } from '@/services/stationSlotService';
 import { parseApiError } from '@/utils/errorParser';
 import type { SolarStation, OperationalSchedule, DailyHours, EnergyBookingSlot } from '@/types/station';
+import { LocationPickerModal } from '@/components/stations/LocationPickerModal';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -168,6 +169,14 @@ export function NodeManagementPage() {
   const [fCapacity, setFCapacity] = useState('');
   const [fBatterySlots, setFBatterySlots] = useState('');
   const [fSchedule, setFSchedule] = useState<OperationalSchedule>(EMPTY_SCHEDULE);
+
+  // Map location picker state
+  const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
+
+  const handleLocationSelected = (lat: number, lng: number) => {
+    setFLatitude(lat.toFixed(6));
+    setFLongitude(lng.toFixed(6));
+  };
 
   // Row expand for schedule view
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -506,21 +515,60 @@ export function NodeManagementPage() {
                     className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground" htmlFor="f-latitude">Latitude *</label>
-                    <input id="f-latitude" required type="number" step="any" min="-90" max="90"
-                      value={fLatitude} onChange={(e) => setFLatitude(e.target.value)} placeholder="6.9271"
-                      className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
+                <div className="space-y-1.5 rounded-lg border border-border/70 bg-muted/20 p-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                      <MapPin className="size-3.5 text-primary" />
+                      Location Coordinates *
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsMapPickerOpen(true)}
+                      className="h-7 px-2.5 text-xs gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+                      id="btn-open-map-picker"
+                    >
+                      <MapPin className="size-3" />
+                      {fLatitude && fLongitude ? 'Select on Map' : 'Pick from Map'}
+                    </Button>
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground" htmlFor="f-longitude">Longitude *</label>
-                    <input id="f-longitude" required type="number" step="any" min="-180" max="180"
-                      value={fLongitude} onChange={(e) => setFLongitude(e.target.value)} placeholder="79.8612"
-                      className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
+
+                  <div className="grid grid-cols-2 gap-2.5 pt-1">
+                    <div>
+                      <label className="text-[11px] font-medium text-muted-foreground" htmlFor="f-latitude">Latitude *</label>
+                      <input id="f-latitude" required type="number" step="any" min="-90" max="90"
+                        value={fLatitude} onChange={(e) => setFLatitude(e.target.value)} placeholder="6.9271"
+                        className="mt-0.5 w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-medium text-muted-foreground" htmlFor="f-longitude">Longitude *</label>
+                      <input id="f-longitude" required type="number" step="any" min="-180" max="180"
+                        value={fLongitude} onChange={(e) => setFLongitude(e.target.value)} placeholder="79.8612"
+                        className="mt-0.5 w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
                   </div>
+
+                  {fLatitude && fLongitude && !isNaN(parseFloat(fLatitude)) && !isNaN(parseFloat(fLongitude)) ? (
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
+                      <span className="truncate">
+                        📍 Selected: <span className="font-mono text-foreground font-medium">{parseFloat(fLatitude).toFixed(5)}, {parseFloat(fLongitude).toFixed(5)}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsMapPickerOpen(true)}
+                        className="text-primary hover:underline font-medium text-[11px] shrink-0 ml-2"
+                      >
+                        Adjust on Map
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground pt-0.5">
+                      Click <span className="text-foreground font-medium">Pick from Map</span> to click or drag on the interactive map.
+                    </p>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -591,6 +639,17 @@ export function NodeManagementPage() {
           </div>
         </div>
       )}
+
+      {/* ── Interactive Location Picker Map Modal ── */}
+      <LocationPickerModal
+        isOpen={isMapPickerOpen}
+        onClose={() => setIsMapPickerOpen(false)}
+        initialLatitude={fLatitude ? parseFloat(fLatitude) : undefined}
+        initialLongitude={fLongitude ? parseFloat(fLongitude) : undefined}
+        onSelectLocation={handleLocationSelected}
+        existingStations={stations}
+        stationName={fName || fStationId || (formMode === 'create' ? 'New Station' : editingStation?.name)}
+      />
 
       {/* ── Battery Slot Management Slide-over Drawer ── */}
       {selectedStationForSlots && (
