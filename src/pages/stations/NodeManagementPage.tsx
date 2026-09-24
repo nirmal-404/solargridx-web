@@ -197,10 +197,23 @@ export function NodeManagementPage() {
 
   useEffect(() => { void loadStations(); }, [includeInactive]);
 
+  // ── Station ID generator ──────────────────────────────────────────────────
+  // Loops until it produces an ID not already present in the loaded list.
+  // This prevents frontend-side duplicates. The backend is the final authority
+  // and will reject with 409 if a race condition still occurs.
+  const generateUniqueStationId = (existingStations: typeof stations): string => {
+    const taken = new Set(existingStations.map((s) => s.stationId.toUpperCase()));
+    let candidate: string;
+    do {
+      candidate = `SGX-${String(Math.floor(1000 + Math.random() * 9000))}`;
+    } while (taken.has(candidate));
+    return candidate;
+  };
+
   // ── Open forms ────────────────────────────────────────────────────────────
   const openCreate = () => {
     setEditingStation(null);
-    setFStationId(''); setFName(''); setFDescription('');
+    setFStationId(generateUniqueStationId(stations)); setFName(''); setFDescription('');
     setFLatitude(''); setFLongitude('');
     setFCapacity(''); setFBatterySlots('');
     setFSchedule(EMPTY_SCHEDULE);
@@ -260,8 +273,24 @@ export function NodeManagementPage() {
       }
       closeForm();
       await loadStations();
-    } catch (err) {
-      setFormError(parseApiError(err, 'Operation failed.'));
+    } catch (err: unknown) {
+      // If the backend returns 409 it means another user registered the same
+      // Station ID between when this form was opened and when it was submitted.
+      // Auto-regenerate a fresh unique ID and prompt the user to retry.
+      const isConflict =
+        typeof err === 'object' &&
+        err !== null &&
+        'status' in err &&
+        (err as { status: number }).status === 409;
+      if (isConflict && formMode === 'create') {
+        await loadStations(); // refresh list so next generation avoids it
+        setFStationId(generateUniqueStationId(stations));
+        setFormError(
+          'That Station ID was just taken by another user. A new unique ID has been generated — please submit again.',
+        );
+      } else {
+        setFormError(parseApiError(err, 'Operation failed.'));
+      }
     } finally {
       setIsSaving(false);
     }
@@ -490,124 +519,197 @@ export function NodeManagementPage() {
             </div>
 
             {/* ── Create / Edit form ── */}
-            {(formMode === 'create' || formMode === 'edit') && (
-              <form onSubmit={(e) => void handleSubmitStation(e)} className="flex-1 space-y-4 p-4">
-                {formMode === 'create' && (
+            {(formMode === 'create' || formMode === 'edit') && (() => {
+              // ── Inline validation ─────────────────────────────────────────
+              const nameErr   = fName.trim().length === 0       ? 'Name is required.'
+                              : fName.length > 30               ? 'Name must be 30 characters or fewer.'
+                              : null;
+              const descErr   = fDescription.length > 50        ? 'Description must be 50 characters or fewer.'
+                              : null;
+              const capErr    = fCapacity === ''                 ? 'Capacity is required.'
+                              : isNaN(Number(fCapacity)) || Number(fCapacity) <= 0
+                                                                 ? 'Capacity must be a positive number.'
+                              : null;
+              const slotsErr  = fBatterySlots === ''             ? 'Battery slots is required.'
+                              : !/^\d+$/.test(fBatterySlots)    ? 'Battery slots must be a whole number.'
+                              : Number(fBatterySlots) < 0       ? 'Battery slots cannot be negative.'
+                              : null;
+              const formIsValid = !nameErr && !descErr && !capErr && !slotsErr;
+
+              const inputBase  = 'mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-colors';
+              const inputOk    = 'border-border focus:ring-primary';
+              const inputError = 'border-destructive/60 focus:ring-destructive/40';
+
+              return (
+                <form onSubmit={(e) => void handleSubmitStation(e)} className="flex-1 space-y-4 p-4">
+                  {/* Station ID (auto-generated display) */}
+                  {formMode === 'create' && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Station ID</p>
+                      <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
+                        <span className="flex-1 font-mono text-sm font-semibold text-foreground tracking-wide">
+                          {fStationId}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground select-none">Auto-generated</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Name */}
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground" htmlFor="f-station-id">Station ID *</label>
-                    <input id="f-station-id" required value={fStationId} onChange={(e) => setFStationId(e.target.value)}
-                      placeholder="SGX-01" maxLength={50}
-                      className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                )}
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground" htmlFor="f-name">Name *</label>
-                  <input id="f-name" required value={fName} onChange={(e) => setFName(e.target.value)}
-                    placeholder="Colombo North Hub"
-                    className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground" htmlFor="f-description">Description</label>
-                  <textarea id="f-description" value={fDescription} onChange={(e) => setFDescription(e.target.value)}
-                    rows={2} placeholder="Optional notes"
-                    className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                  />
-                </div>
-                <div className="space-y-1.5 rounded-lg border border-border/70 bg-muted/20 p-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-foreground flex items-center gap-1.5">
-                      <MapPin className="size-3.5 text-primary" />
-                      Location Coordinates *
-                    </span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsMapPickerOpen(true)}
-                      className="h-7 px-2.5 text-xs gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
-                      id="btn-open-map-picker"
-                    >
-                      <MapPin className="size-3" />
-                      {fLatitude && fLongitude ? 'Select on Map' : 'Pick from Map'}
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2.5 pt-1">
-                    <div>
-                      <label className="text-[11px] font-medium text-muted-foreground" htmlFor="f-latitude">Latitude *</label>
-                      <input id="f-latitude" required type="number" step="any" min="-90" max="90"
-                        value={fLatitude} onChange={(e) => setFLatitude(e.target.value)} placeholder="6.9271"
-                        className="mt-0.5 w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-medium text-muted-foreground" htmlFor="f-longitude">Longitude *</label>
-                      <input id="f-longitude" required type="number" step="any" min="-180" max="180"
-                        value={fLongitude} onChange={(e) => setFLongitude(e.target.value)} placeholder="79.8612"
-                        className="mt-0.5 w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                      />
-                    </div>
-                  </div>
-
-                  {fLatitude && fLongitude && !isNaN(parseFloat(fLatitude)) && !isNaN(parseFloat(fLongitude)) ? (
-                    <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
-                      <span className="truncate">
-                        📍 Selected: <span className="font-mono text-foreground font-medium">{parseFloat(fLatitude).toFixed(5)}, {parseFloat(fLongitude).toFixed(5)}</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-medium text-muted-foreground" htmlFor="f-name">Name *</label>
+                      <span className={`text-[10px] tabular-nums ${fName.length > 30 ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
+                        {fName.length}/30
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => setIsMapPickerOpen(true)}
-                        className="text-primary hover:underline font-medium text-[11px] shrink-0 ml-2"
-                      >
-                        Adjust on Map
-                      </button>
                     </div>
-                  ) : (
-                    <p className="text-[11px] text-muted-foreground pt-0.5">
-                      Click <span className="text-foreground font-medium">Pick from Map</span> to click or drag on the interactive map.
+                    <input
+                      id="f-name" required maxLength={31}
+                      value={fName} onChange={(e) => setFName(e.target.value)}
+                      placeholder="Colombo North Hub"
+                      className={`${inputBase} ${nameErr && fName.length > 0 ? inputError : inputOk}`}
+                    />
+                    {nameErr && fName.length > 0 && (
+                      <p className="mt-1 text-[10px] text-destructive">{nameErr}</p>
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-medium text-muted-foreground" htmlFor="f-description">Description</label>
+                      <span className={`text-[10px] tabular-nums ${fDescription.length > 50 ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
+                        {fDescription.length}/50
+                      </span>
+                    </div>
+                    <textarea
+                      id="f-description" rows={2} maxLength={51}
+                      value={fDescription} onChange={(e) => setFDescription(e.target.value)}
+                      placeholder="Optional notes"
+                      className={`${inputBase} resize-none ${descErr ? inputError : inputOk}`}
+                    />
+                    {descErr && (
+                      <p className="mt-1 text-[10px] text-destructive">{descErr}</p>
+                    )}
+                  </div>
+
+                  {/* Location */}
+                  <div className="space-y-1.5 rounded-lg border border-border/70 bg-muted/20 p-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                        <MapPin className="size-3.5 text-primary" />
+                        Location Coordinates *
+                      </span>
+                      <Button
+                        type="button" variant="outline" size="sm"
+                        onClick={() => setIsMapPickerOpen(true)}
+                        className="h-7 px-2.5 text-xs gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+                        id="btn-open-map-picker"
+                      >
+                        <MapPin className="size-3" />
+                        {fLatitude && fLongitude ? 'Select on Map' : 'Pick from Map'}
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2.5 pt-1">
+                      <div>
+                        <label className="text-[11px] font-medium text-muted-foreground" htmlFor="f-latitude">Latitude *</label>
+                        <input id="f-latitude" required type="number" step="any" min="-90" max="90"
+                          value={fLatitude} onChange={(e) => setFLatitude(e.target.value)} placeholder="6.9271"
+                          className="mt-0.5 w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-medium text-muted-foreground" htmlFor="f-longitude">Longitude *</label>
+                        <input id="f-longitude" required type="number" step="any" min="-180" max="180"
+                          value={fLongitude} onChange={(e) => setFLongitude(e.target.value)} placeholder="79.8612"
+                          className="mt-0.5 w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                    </div>
+
+                    {fLatitude && fLongitude && !isNaN(parseFloat(fLatitude)) && !isNaN(parseFloat(fLongitude)) ? (
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
+                        <span className="truncate">
+                          📍 Selected: <span className="font-mono text-foreground font-medium">{parseFloat(fLatitude).toFixed(5)}, {parseFloat(fLongitude).toFixed(5)}</span>
+                        </span>
+                        <button type="button" onClick={() => setIsMapPickerOpen(true)}
+                          className="text-primary hover:underline font-medium text-[11px] shrink-0 ml-2">
+                          Adjust on Map
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground pt-0.5">
+                        Click <span className="text-foreground font-medium">Pick from Map</span> to click or drag on the interactive map.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Capacity & Battery Slots */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground" htmlFor="f-capacity">Capacity (kWh) *</label>
+                      <input
+                        id="f-capacity" required type="number" step="0.01" min="0.01"
+                        value={fCapacity}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === '' || /^\d*\.?\d*$/.test(v)) setFCapacity(v);
+                        }}
+                        placeholder="150"
+                        className={`mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 transition-colors ${capErr && fCapacity !== '' ? inputError : inputOk}`}
+                      />
+                      {capErr && fCapacity !== '' && (
+                        <p className="mt-1 text-[10px] text-destructive">{capErr}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground" htmlFor="f-battery-slots">Battery Slots *</label>
+                      <input
+                        id="f-battery-slots" required type="number" min="0" step="1"
+                        value={fBatterySlots}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === '' || /^\d+$/.test(v)) setFBatterySlots(v);
+                        }}
+                        placeholder="4"
+                        className={`mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 transition-colors ${slotsErr && fBatterySlots !== '' ? inputError : inputOk}`}
+                      />
+                      {slotsErr && fBatterySlots !== '' && (
+                        <p className="mt-1 text-[10px] text-destructive">{slotsErr}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Schedule (create only) */}
+                  {formMode === 'create' && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Operating Schedule</p>
+                      <ScheduleEditor schedule={fSchedule} onChange={setFSchedule} />
+                    </div>
+                  )}
+
+                  {formError && (
+                    <p className="flex items-center gap-1.5 text-xs text-destructive">
+                      <AlertCircle className="size-3.5" />{formError}
                     </p>
                   )}
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground" htmlFor="f-capacity">Capacity (kWh) *</label>
-                    <input id="f-capacity" required type="number" step="0.01" min="0.01"
-                      value={fCapacity} onChange={(e) => setFCapacity(e.target.value)} placeholder="150"
-                      className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground" htmlFor="f-battery-slots">Battery Slots *</label>
-                    <input id="f-battery-slots" required type="number" min="0" step="1"
-                      value={fBatterySlots} onChange={(e) => setFBatterySlots(e.target.value)} placeholder="4"
-                      className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                </div>
 
-                {formMode === 'create' && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-2">Operating Schedule</p>
-                    <ScheduleEditor schedule={fSchedule} onChange={setFSchedule} />
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      type="submit"
+                      disabled={isSaving || !formIsValid}
+                      className="flex-1 text-xs h-9"
+                      id="btn-submit-station"
+                    >
+                      {isSaving ? 'Saving…' : formMode === 'create' ? 'Create Station' : 'Save Changes'}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={closeForm} className="text-xs h-9">Cancel</Button>
                   </div>
-                )}
+                </form>
+              );
+            })()}
 
-                {formError && (
-                  <p className="flex items-center gap-1.5 text-xs text-destructive">
-                    <AlertCircle className="size-3.5" />{formError}
-                  </p>
-                )}
-
-                <div className="flex gap-2 pt-2">
-                  <Button type="submit" disabled={isSaving} className="flex-1 text-xs h-9" id="btn-submit-station">
-                    {isSaving ? 'Saving…' : formMode === 'create' ? 'Create Station' : 'Save Changes'}
-                  </Button>
-                  <Button type="button" variant="outline" onClick={closeForm} className="text-xs h-9">Cancel</Button>
-                </div>
-              </form>
-            )}
 
             {/* ── Schedule form ── */}
             {formMode === 'schedule' && (
