@@ -1,7 +1,7 @@
 // Smart Solar Microgrid Trading System - Solar Station and Slot Type Definitions
 
-export type StationStatus = 'Active' | 'Deactivated';
-export type SlotStatus = 'Active' | 'Deactivated';
+export type StationStatus = "Active" | "Deactivated";
+export type SlotStatus = "Active" | "Deactivated";
 
 export interface DailyHours {
   day: string; // DayOfWeek name serialized by System.Text.Json

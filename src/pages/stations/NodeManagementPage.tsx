@@ -59,8 +59,15 @@ const DAY_NAMES = [
 
 function dayIndex(day: string): number {
   const numericDay = Number(day);
-  if (Number.isInteger(numericDay) && numericDay >= 0 && numericDay < DAY_NAMES.length) return numericDay;
-  return DAY_NAMES.findIndex((name) => name.toLowerCase() === day.toLowerCase());
+  if (
+    Number.isInteger(numericDay) &&
+    numericDay >= 0 &&
+    numericDay < DAY_NAMES.length
+  )
+    return numericDay;
+  return DAY_NAMES.findIndex(
+    (name) => name.toLowerCase() === day.toLowerCase(),
+  );
 }
 
 function dayName(day: string): string {
@@ -154,7 +161,9 @@ function ScheduleEditor({
             id={`day-select-${i}`}
             className="flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground"
             value={String(dayIndex(d.day))}
-            onChange={(e) => updateDay(i, { day: DAY_NAMES[Number(e.target.value)] })}
+            onChange={(e) =>
+              updateDay(i, { day: DAY_NAMES[Number(e.target.value)] })
+            }
           >
             {DAY_NAMES.map((name, idx) => (
               <option key={idx} value={idx}>

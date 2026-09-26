@@ -1,5 +1,5 @@
 // Smart Solar Microgrid Trading System - Edit Reservation Dialog
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,22 +7,26 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Loader2, AlertCircle, Clock } from 'lucide-react';
-import { stationSlotService } from '@/services/stationSlotService';
-import { formatDateTime, hasTwelveHourNotice, formatNoticeStatus } from '@/utils/dateUtils';
-import type { ReservationResponse } from '@/types/reservation';
-import type { EnergyBookingSlot } from '@/types/station';
+} from "@/components/ui/select";
+import { Loader2, AlertCircle, Clock } from "lucide-react";
+import { stationSlotService } from "@/services/stationSlotService";
+import {
+  formatDateTime,
+  hasTwelveHourNotice,
+  formatNoticeStatus,
+} from "@/utils/dateUtils";
+import type { ReservationResponse } from "@/types/reservation";
+import type { EnergyBookingSlot } from "@/types/station";
 
 interface EditReservationDialogProps {
   reservation: ReservationResponse | null;
@@ -33,7 +37,7 @@ interface EditReservationDialogProps {
     reservationId: string,
     stationId: string,
     slotId: string,
-    capacity: number
+    capacity: number,
   ) => Promise<void>;
 }
 
@@ -45,8 +49,8 @@ export function EditReservationDialog({
   onUpdate,
 }: EditReservationDialogProps) {
   const [slots, setSlots] = useState<EnergyBookingSlot[]>([]);
-  const [selectedSlotId, setSelectedSlotId] = useState<string>('');
-  const [requestedCapacity, setRequestedCapacity] = useState<string>('');
+  const [selectedSlotId, setSelectedSlotId] = useState<string>("");
+  const [requestedCapacity, setRequestedCapacity] = useState<string>("");
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -62,7 +66,10 @@ export function EditReservationDialog({
       if (!reservation) return;
       setIsLoadingSlots(true);
       try {
-        const availableSlots = await stationSlotService.getSlots(reservation.stationId, false);
+        const availableSlots = await stationSlotService.getSlots(
+          reservation.stationId,
+          false,
+        );
         setSlots(availableSlots);
       } catch {
         setSlots([]);
@@ -85,12 +92,12 @@ export function EditReservationDialog({
 
     const capacityNum = parseFloat(requestedCapacity);
     if (isNaN(capacityNum) || capacityNum <= 0) {
-      setErrorMessage('Requested capacity must be a positive number.');
+      setErrorMessage("Requested capacity must be a positive number.");
       return;
     }
 
     if (!selectedSlotId) {
-      setErrorMessage('Please select a booking slot.');
+      setErrorMessage("Please select a booking slot.");
       return;
     }
 
@@ -98,14 +105,21 @@ export function EditReservationDialog({
     setErrorMessage(null);
 
     try {
-      await onUpdate(reservation.reservationId, reservation.stationId, selectedSlotId, capacityNum);
+      await onUpdate(
+        reservation.reservationId,
+        reservation.stationId,
+        selectedSlotId,
+        capacityNum,
+      );
       onOpenChange(false);
       onSuccess();
     } catch (err: unknown) {
       if (err instanceof Error) {
         setErrorMessage(err.message);
       } else {
-        setErrorMessage('Failed to update reservation. Ensure 12 hours notice and available capacity.');
+        setErrorMessage(
+          "Failed to update reservation. Ensure 12 hours notice and available capacity.",
+        );
       }
     } finally {
       setIsSubmitting(false);
@@ -118,7 +132,10 @@ export function EditReservationDialog({
         <DialogHeader>
           <DialogTitle>Update Reservation</DialogTitle>
           <DialogDescription>
-            Booking ID: <span className="font-mono font-medium text-foreground">{reservation.reservationId}</span>
+            Booking ID:{" "}
+            <span className="font-mono font-medium text-foreground">
+              {reservation.reservationId}
+            </span>
           </DialogDescription>
         </DialogHeader>
 
@@ -126,15 +143,15 @@ export function EditReservationDialog({
         <div
           className={`flex items-center gap-2 rounded-lg border p-3 text-xs ${
             canModify
-              ? 'bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-400'
-              : 'bg-rose-500/10 border-rose-500/20 text-rose-700 dark:text-rose-400'
+              ? "bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-400"
+              : "bg-rose-500/10 border-rose-500/20 text-rose-700 dark:text-rose-400"
           }`}
         >
           <Clock className="size-4 shrink-0" />
           <span>
             {canModify
               ? `Notice window satisfied: ${notice.text}.`
-              : 'Updates locked: Requires at least 12 hours notice prior to slot start time.'}
+              : "Updates locked: Requires at least 12 hours notice prior to slot start time."}
           </span>
         </div>
 
@@ -174,13 +191,15 @@ export function EditReservationDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={reservation.slotId}>
-                    Keep Current Slot ({formatDateTime(reservation.scheduledStartTime)})
+                    Keep Current Slot (
+                    {formatDateTime(reservation.scheduledStartTime)})
                   </SelectItem>
                   {slots
                     .filter((s) => s.slotId !== reservation.slotId)
                     .map((s) => (
                       <SelectItem key={s.slotId} value={s.slotId}>
-                        {formatDateTime(s.startTime)} — Avail: {s.availableCapacity} kWh
+                        {formatDateTime(s.startTime)} — Avail:{" "}
+                        {s.availableCapacity} kWh
                       </SelectItem>
                     ))}
                 </SelectContent>
