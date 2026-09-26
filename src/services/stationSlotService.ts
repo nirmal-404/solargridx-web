@@ -80,10 +80,10 @@ export const stationSlotService = {
     await apiClient.post(`/stations/${stationId}/reactivate`);
   },
 
-  // Returns slots, optionally filtered by station and bookable availability.
-  async getSlots(stationId?: string, availableOnly = true): Promise<EnergyBookingSlot[]> {
+  // Returns slots, optionally including inactive entries for staff management.
+  async getSlots(stationId?: string, includeInactive = false): Promise<EnergyBookingSlot[]> {
     const response = await apiClient.get<EnergyBookingSlot[]>('/slots', {
-      params: { stationId, availableOnly },
+      params: { stationId, includeInactive },
     });
     return response.data;
   },

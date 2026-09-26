@@ -46,9 +46,9 @@ export function LocationPickerModal({
 }: LocationPickerModalProps) {
   // Default to provided coords or Colombo North
   const defaultLat =
-    initialLatitude && !isNaN(initialLatitude) ? initialLatitude : 6.9271;
+    initialLatitude != null && Number.isFinite(initialLatitude) ? initialLatitude : 6.9271;
   const defaultLng =
-    initialLongitude && !isNaN(initialLongitude) ? initialLongitude : 79.8612;
+    initialLongitude != null && Number.isFinite(initialLongitude) ? initialLongitude : 79.8612;
 
   const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number }>({
     lat: defaultLat,
@@ -66,9 +66,9 @@ export function LocationPickerModal({
   useEffect(() => {
     if (isOpen) {
       const lat =
-        initialLatitude && !isNaN(initialLatitude) ? initialLatitude : 6.9271;
+        initialLatitude != null && Number.isFinite(initialLatitude) ? initialLatitude : 6.9271;
       const lng =
-        initialLongitude && !isNaN(initialLongitude) ? initialLongitude : 79.8612;
+        initialLongitude != null && Number.isFinite(initialLongitude) ? initialLongitude : 79.8612;
       setSelectedCoords({ lat, lng });
     }
   }, [isOpen, initialLatitude, initialLongitude]);
@@ -108,7 +108,7 @@ export function LocationPickerModal({
       }
 
       const initialZoom =
-        initialLatitude && initialLongitude && !isNaN(initialLatitude) ? 14 : 9;
+        initialLatitude != null && initialLongitude != null && Number.isFinite(initialLatitude) && Number.isFinite(initialLongitude) ? 14 : 9;
 
       const map = L.map(mapContainerRef.current, {
         zoomControl: true,
@@ -122,22 +122,15 @@ export function LocationPickerModal({
 
       // Plot subtle existing stations as reference
       existingStations.forEach((station) => {
-        if (!station.latitude || !station.longitude) return;
+        if (!Number.isFinite(station.latitude) || !Number.isFinite(station.longitude)) return;
 
         // Custom subtle marker icon for surrounding stations
+        const markerLabel = document.createElement('div');
+        markerLabel.style.cssText = 'background:#0284c7;color:white;font-size:10px;font-weight:bold;padding:2px 6px;border-radius:9999px;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);white-space:nowrap';
+        markerLabel.textContent = `⚡ ${station.name || station.stationId}`;
         const existingIcon = L.divIcon({
           className: 'custom-existing-station-marker',
-          html: `<div style="
-            background: #0284c7;
-            color: white;
-            font-size: 10px;
-            font-weight: bold;
-            padding: 2px 6px;
-            border-radius: 9999px;
-            border: 2px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            white-space: nowrap;
-          ">⚡ ${station.name || station.stationId}</div>`,
+          html: markerLabel,
           iconSize: [20, 20],
           iconAnchor: [10, 10],
         });
@@ -146,7 +139,7 @@ export function LocationPickerModal({
           icon: existingIcon,
         })
           .addTo(map)
-          .bindTooltip(`Station: ${station.name} (${station.stationId})`, {
+          .bindTooltip(createStationTooltip(station), {
             direction: 'top',
           });
       });
@@ -156,12 +149,7 @@ export function LocationPickerModal({
         draggable: true,
       }).addTo(map);
 
-      activeMarker.bindPopup(
-        `<div style="font-family:sans-serif;font-size:12px">
-          <strong>${stationName ? stationName : 'New Station Location'}</strong><br/>
-          <span style="color:#0284c7;font-weight:600">Drag or click anywhere on the map</span>
-        </div>`
-      );
+      activeMarker.bindPopup(createSelectionPopup(stationName));
 
       activeMarker.on('drag', (e) => {
         const marker = e.target as import('leaflet').Marker;
@@ -418,4 +406,23 @@ export function LocationPickerModal({
       </div>
     </div>
   );
+}
+
+function createStationTooltip(station: SolarStation): HTMLElement {
+  const tooltip = document.createElement('span');
+  tooltip.textContent = `Station: ${station.name} (${station.stationId})`;
+  return tooltip;
+}
+
+function createSelectionPopup(name?: string): HTMLElement {
+  const popup = document.createElement('div');
+  popup.style.fontFamily = 'sans-serif';
+  popup.style.fontSize = '12px';
+  const title = document.createElement('strong');
+  title.textContent = name || 'New Station Location';
+  const instruction = document.createElement('div');
+  instruction.style.cssText = 'color:#0284c7;font-weight:600';
+  instruction.textContent = 'Drag or click anywhere on the map';
+  popup.append(title, instruction);
+  return popup;
 }

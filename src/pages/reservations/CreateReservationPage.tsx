@@ -65,7 +65,7 @@ export function CreateReservationPage() {
       setIsLoadingSlots(true);
       setSelectedSlotId('');
       try {
-        const availableSlots = await stationSlotService.getSlots(selectedStationId, true);
+        const availableSlots = await stationSlotService.getSlots(selectedStationId, false);
         // Filter to future slots within 7-day window
         const validSlots = availableSlots.filter(
           (s) => isWithinSevenDayWindow(s.startTime).valid && s.availableCapacity > 0

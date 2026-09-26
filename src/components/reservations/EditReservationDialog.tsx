@@ -62,7 +62,7 @@ export function EditReservationDialog({
       if (!reservation) return;
       setIsLoadingSlots(true);
       try {
-        const availableSlots = await stationSlotService.getSlots(reservation.stationId, true);
+        const availableSlots = await stationSlotService.getSlots(reservation.stationId, false);
         setSlots(availableSlots);
       } catch {
         setSlots([]);

@@ -4,7 +4,7 @@ export type StationStatus = 'Active' | 'Deactivated';
 export type SlotStatus = 'Active' | 'Deactivated';
 
 export interface DailyHours {
-  day: number; // 0=Sunday … 6=Saturday (matches DayOfWeek enum)
+  day: string; // DayOfWeek name serialized by System.Text.Json
   open: string; // 'HH:mm' local time
   close: string;
 }
