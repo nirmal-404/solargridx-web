@@ -2,17 +2,11 @@
 // Enables operators to select latitude and longitude coordinates interactively
 // by clicking or dragging a marker on an OpenStreetMap Leaflet map.
 
-import { useEffect, useRef, useState } from 'react';
-import {
-  MapPin,
-  X,
-  Check,
-  Navigation,
-  Crosshair,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import type { SolarStation } from '@/types/station';
-import 'leaflet/dist/leaflet.css';
+import { useEffect, useRef, useState } from "react";
+import { MapPin, X, Check, Navigation, Crosshair } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { SolarStation } from "@/types/station";
+import "leaflet/dist/leaflet.css";
 
 interface LocationPickerModalProps {
   isOpen: boolean;
@@ -25,14 +19,14 @@ interface LocationPickerModalProps {
 }
 
 const PRESET_REGIONS = [
-  { name: 'Colombo', lat: 6.9271, lng: 79.8612 },
-  { name: 'Kandy', lat: 7.2906, lng: 80.6337 },
-  { name: 'Galle', lat: 6.0535, lng: 80.2210 },
-  { name: 'Negombo', lat: 7.2008, lng: 79.8736 },
-  { name: 'Jaffna', lat: 9.6615, lng: 80.0255 },
-  { name: 'Kurunegala', lat: 7.4863, lng: 80.3623 },
-  { name: 'Batticaloa', lat: 7.7102, lng: 81.6924 },
-  { name: 'Anuradhapura', lat: 8.3114, lng: 80.4037 },
+  { name: "Colombo", lat: 6.9271, lng: 79.8612 },
+  { name: "Kandy", lat: 7.2906, lng: 80.6337 },
+  { name: "Galle", lat: 6.0535, lng: 80.221 },
+  { name: "Negombo", lat: 7.2008, lng: 79.8736 },
+  { name: "Jaffna", lat: 9.6615, lng: 80.0255 },
+  { name: "Kurunegala", lat: 7.4863, lng: 80.3623 },
+  { name: "Batticaloa", lat: 7.7102, lng: 81.6924 },
+  { name: "Anuradhapura", lat: 8.3114, lng: 80.4037 },
 ];
 
 export function LocationPickerModal({
@@ -46,11 +40,18 @@ export function LocationPickerModal({
 }: LocationPickerModalProps) {
   // Default to provided coords or Colombo North
   const defaultLat =
-    initialLatitude && !isNaN(initialLatitude) ? initialLatitude : 6.9271;
+    initialLatitude != null && Number.isFinite(initialLatitude)
+      ? initialLatitude
+      : 6.9271;
   const defaultLng =
-    initialLongitude && !isNaN(initialLongitude) ? initialLongitude : 79.8612;
+    initialLongitude != null && Number.isFinite(initialLongitude)
+      ? initialLongitude
+      : 79.8612;
 
-  const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number }>({
+  const [selectedCoords, setSelectedCoords] = useState<{
+    lat: number;
+    lng: number;
+  }>({
     lat: defaultLat,
     lng: defaultLng,
   });
@@ -59,16 +60,20 @@ export function LocationPickerModal({
   const [locateError, setLocateError] = useState<string | null>(null);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const leafletMapRef = useRef<import('leaflet').Map | null>(null);
-  const activeMarkerRef = useRef<import('leaflet').Marker | null>(null);
+  const leafletMapRef = useRef<import("leaflet").Map | null>(null);
+  const activeMarkerRef = useRef<import("leaflet").Marker | null>(null);
 
   // Sync initial coordinates when modal opens
   useEffect(() => {
     if (isOpen) {
       const lat =
-        initialLatitude && !isNaN(initialLatitude) ? initialLatitude : 6.9271;
+        initialLatitude != null && Number.isFinite(initialLatitude)
+          ? initialLatitude
+          : 6.9271;
       const lng =
-        initialLongitude && !isNaN(initialLongitude) ? initialLongitude : 79.8612;
+        initialLongitude != null && Number.isFinite(initialLongitude)
+          ? initialLongitude
+          : 79.8612;
       setSelectedCoords({ lat, lng });
     }
   }, [isOpen, initialLatitude, initialLongitude]);
@@ -77,10 +82,10 @@ export function LocationPickerModal({
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
   // Initialise Leaflet map when opened
@@ -90,15 +95,18 @@ export function LocationPickerModal({
     let isMounted = true;
 
     const initMap = async () => {
-      const L = await import('leaflet');
+      const L = await import("leaflet");
       if (!isMounted || !mapContainerRef.current) return;
 
       // Fix Vite asset URL resolution for default markers
-      delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
+      delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)
+        ._getIconUrl;
       L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        iconRetinaUrl:
+          "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+        shadowUrl:
+          "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
       });
 
       // Cleanup existing map instance if any
@@ -108,13 +116,18 @@ export function LocationPickerModal({
       }
 
       const initialZoom =
-        initialLatitude && initialLongitude && !isNaN(initialLatitude) ? 14 : 9;
+        initialLatitude != null &&
+        initialLongitude != null &&
+        Number.isFinite(initialLatitude) &&
+        Number.isFinite(initialLongitude)
+          ? 14
+          : 9;
 
       const map = L.map(mapContainerRef.current, {
         zoomControl: true,
       }).setView([selectedCoords.lat, selectedCoords.lng], initialZoom);
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution:
           '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 19,
@@ -122,22 +135,20 @@ export function LocationPickerModal({
 
       // Plot subtle existing stations as reference
       existingStations.forEach((station) => {
-        if (!station.latitude || !station.longitude) return;
+        if (
+          !Number.isFinite(station.latitude) ||
+          !Number.isFinite(station.longitude)
+        )
+          return;
 
         // Custom subtle marker icon for surrounding stations
+        const markerLabel = document.createElement("div");
+        markerLabel.style.cssText =
+          "background:#0284c7;color:white;font-size:10px;font-weight:bold;padding:2px 6px;border-radius:9999px;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);white-space:nowrap";
+        markerLabel.textContent = `⚡ ${station.name || station.stationId}`;
         const existingIcon = L.divIcon({
-          className: 'custom-existing-station-marker',
-          html: `<div style="
-            background: #0284c7;
-            color: white;
-            font-size: 10px;
-            font-weight: bold;
-            padding: 2px 6px;
-            border-radius: 9999px;
-            border: 2px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            white-space: nowrap;
-          ">⚡ ${station.name || station.stationId}</div>`,
+          className: "custom-existing-station-marker",
+          html: markerLabel,
           iconSize: [20, 20],
           iconAnchor: [10, 10],
         });
@@ -146,8 +157,8 @@ export function LocationPickerModal({
           icon: existingIcon,
         })
           .addTo(map)
-          .bindTooltip(`Station: ${station.name} (${station.stationId})`, {
-            direction: 'top',
+          .bindTooltip(createStationTooltip(station), {
+            direction: "top",
           });
       });
 
@@ -156,15 +167,10 @@ export function LocationPickerModal({
         draggable: true,
       }).addTo(map);
 
-      activeMarker.bindPopup(
-        `<div style="font-family:sans-serif;font-size:12px">
-          <strong>${stationName ? stationName : 'New Station Location'}</strong><br/>
-          <span style="color:#0284c7;font-weight:600">Drag or click anywhere on the map</span>
-        </div>`
-      );
+      activeMarker.bindPopup(createSelectionPopup(stationName));
 
-      activeMarker.on('drag', (e) => {
-        const marker = e.target as import('leaflet').Marker;
+      activeMarker.on("drag", (e) => {
+        const marker = e.target as import("leaflet").Marker;
         const pos = marker.getLatLng();
         setSelectedCoords({
           lat: parseFloat(pos.lat.toFixed(6)),
@@ -172,8 +178,8 @@ export function LocationPickerModal({
         });
       });
 
-      activeMarker.on('dragend', (e) => {
-        const marker = e.target as import('leaflet').Marker;
+      activeMarker.on("dragend", (e) => {
+        const marker = e.target as import("leaflet").Marker;
         const pos = marker.getLatLng();
         setSelectedCoords({
           lat: parseFloat(pos.lat.toFixed(6)),
@@ -182,7 +188,7 @@ export function LocationPickerModal({
       });
 
       // Click on map to place/move marker
-      map.on('click', (e: import('leaflet').LeafletMouseEvent) => {
+      map.on("click", (e: import("leaflet").LeafletMouseEvent) => {
         const newLat = parseFloat(e.latlng.lat.toFixed(6));
         const newLng = parseFloat(e.latlng.lng.toFixed(6));
         activeMarker.setLatLng([newLat, newLng]);
@@ -225,7 +231,7 @@ export function LocationPickerModal({
   // Handle current GPS location
   const handleLocateMe = () => {
     if (!navigator.geolocation) {
-      setLocateError('Geolocation is not supported by your browser.');
+      setLocateError("Geolocation is not supported by your browser.");
       return;
     }
     setIsLocating(true);
@@ -249,7 +255,7 @@ export function LocationPickerModal({
         setLocateError(`Unable to get location: ${err.message}`);
         setIsLocating(false);
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 10000 },
     );
   };
 
@@ -277,7 +283,8 @@ export function LocationPickerModal({
                 Select Station Location
               </h2>
               <p className="text-xs text-muted-foreground">
-                Click anywhere on the map or drag the pin to set the exact microgrid coordinates.
+                Click anywhere on the map or drag the pin to set the exact
+                microgrid coordinates.
               </p>
             </div>
           </div>
@@ -318,8 +325,10 @@ export function LocationPickerModal({
             disabled={isLocating}
             className="h-7 text-xs gap-1.5"
           >
-            <Crosshair className={`size-3.5 ${isLocating ? 'animate-spin' : ''}`} />
-            {isLocating ? 'Locating…' : 'My Current Location'}
+            <Crosshair
+              className={`size-3.5 ${isLocating ? "animate-spin" : ""}`}
+            />
+            {isLocating ? "Locating…" : "My Current Location"}
           </Button>
         </div>
 
@@ -340,7 +349,14 @@ export function LocationPickerModal({
               <span>Selected Coordinates</span>
             </div>
             <div className="font-mono text-[11px] text-muted-foreground">
-              Lat: <span className="text-foreground font-medium">{selectedCoords.lat.toFixed(6)}</span> | Lng: <span className="text-foreground font-medium">{selectedCoords.lng.toFixed(6)}</span>
+              Lat:{" "}
+              <span className="text-foreground font-medium">
+                {selectedCoords.lat.toFixed(6)}
+              </span>{" "}
+              | Lng:{" "}
+              <span className="text-foreground font-medium">
+                {selectedCoords.lng.toFixed(6)}
+              </span>
             </div>
           </div>
 
@@ -348,7 +364,10 @@ export function LocationPickerModal({
           {existingStations.length > 0 && (
             <div className="absolute bottom-3 left-3 z-[1000] rounded-md border border-border/70 bg-background/85 backdrop-blur-sm px-2.5 py-1 text-[11px] text-muted-foreground shadow-sm flex items-center gap-1.5">
               <span className="size-2 rounded-full bg-sky-500 inline-block" />
-              <span>{existingStations.length} existing network nodes plotted for reference</span>
+              <span>
+                {existingStations.length} existing network nodes plotted for
+                reference
+              </span>
             </div>
           )}
         </div>
@@ -357,7 +376,10 @@ export function LocationPickerModal({
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t p-3 bg-muted/20">
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <div className="flex items-center gap-1.5">
-              <label htmlFor="modal-lat" className="text-xs text-muted-foreground font-medium">
+              <label
+                htmlFor="modal-lat"
+                className="text-xs text-muted-foreground font-medium"
+              >
                 Lat:
               </label>
               <input
@@ -371,14 +393,21 @@ export function LocationPickerModal({
                   const val = parseFloat(e.target.value);
                   if (!isNaN(val)) {
                     setSelectedCoords((prev) => ({ ...prev, lat: val }));
-                    if (activeMarkerRef.current) activeMarkerRef.current.setLatLng([val, selectedCoords.lng]);
+                    if (activeMarkerRef.current)
+                      activeMarkerRef.current.setLatLng([
+                        val,
+                        selectedCoords.lng,
+                      ]);
                   }
                 }}
                 className="w-24 rounded border border-border bg-background px-2 py-1 text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
             <div className="flex items-center gap-1.5">
-              <label htmlFor="modal-lng" className="text-xs text-muted-foreground font-medium">
+              <label
+                htmlFor="modal-lng"
+                className="text-xs text-muted-foreground font-medium"
+              >
                 Lng:
               </label>
               <input
@@ -392,7 +421,11 @@ export function LocationPickerModal({
                   const val = parseFloat(e.target.value);
                   if (!isNaN(val)) {
                     setSelectedCoords((prev) => ({ ...prev, lng: val }));
-                    if (activeMarkerRef.current) activeMarkerRef.current.setLatLng([selectedCoords.lat, val]);
+                    if (activeMarkerRef.current)
+                      activeMarkerRef.current.setLatLng([
+                        selectedCoords.lat,
+                        val,
+                      ]);
                   }
                 }}
                 className="w-24 rounded border border-border bg-background px-2 py-1 text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
@@ -401,7 +434,13 @@ export function LocationPickerModal({
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <Button type="button" variant="outline" size="sm" onClick={onClose} className="h-8 text-xs">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onClose}
+              className="h-8 text-xs"
+            >
               Cancel
             </Button>
             <Button
@@ -418,4 +457,23 @@ export function LocationPickerModal({
       </div>
     </div>
   );
+}
+
+function createStationTooltip(station: SolarStation): HTMLElement {
+  const tooltip = document.createElement("span");
+  tooltip.textContent = `Station: ${station.name} (${station.stationId})`;
+  return tooltip;
+}
+
+function createSelectionPopup(name?: string): HTMLElement {
+  const popup = document.createElement("div");
+  popup.style.fontFamily = "sans-serif";
+  popup.style.fontSize = "12px";
+  const title = document.createElement("strong");
+  title.textContent = name || "New Station Location";
+  const instruction = document.createElement("div");
+  instruction.style.cssText = "color:#0284c7;font-weight:600";
+  instruction.textContent = "Drag or click anywhere on the map";
+  popup.append(title, instruction);
+  return popup;
 }
