@@ -77,7 +77,7 @@ function InfoRow({ icon, label, value }: InfoRowProps) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export function ProfilePage() {
-  const { user, login } = useAuth();
+  const { user } = useAuth();
 
   // ── Edit profile state ────────────────────────────────────────────────────
   const [isEditing, setIsEditing] = useState(false);

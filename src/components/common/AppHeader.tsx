@@ -2,7 +2,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { SunMedium, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { Breadcrumb } from '@/components/common/Breadcrumb';
 import type { UserRole } from '@/types/auth';
 

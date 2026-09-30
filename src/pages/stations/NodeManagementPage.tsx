@@ -348,7 +348,8 @@ export function NodeManagementPage() {
   // Slot modal state: 'create' | 'edit' | null
   const [slotModalMode, setSlotModalMode] = useState<'create' | 'edit' | null>(null);
   const [editingSlot, setEditingSlot] = useState<EnergyBookingSlot | null>(null);
-  const [slotDate, setSlotDate] = useState('2026-09-25');
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const [slotDate, setSlotDate] = useState(todayStr);
   const [slotStartTime, setSlotStartTime] = useState('14:00');
   const [slotEndTime, setSlotEndTime] = useState('15:00');
   const [slotCapacity, setSlotCapacity] = useState('10');
@@ -386,11 +387,13 @@ export function NodeManagementPage() {
 
   const openCreateSlot = () => {
     setEditingSlot(null);
-    setSlotDate('2026-09-25');
+    const today = new Date().toISOString().slice(0, 10);
+    setSlotDate(today);
     setSlotStartTime('14:00');
     setSlotEndTime('15:00');
     setSlotCapacity('10');
     setSlotAvailableCapacity('10');
+    setSlotError(null);
     setSlotModalMode('create');
   };
 
@@ -398,14 +401,72 @@ export function NodeManagementPage() {
     setEditingSlot(slot);
     setSlotCapacity(String(slot.capacity));
     setSlotAvailableCapacity(String(slot.availableCapacity));
+    setSlotError(null);
     setSlotModalMode('edit');
   };
 
   const handleSaveSlot = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStationForSlots) return;
-    setIsSlotSaving(true);
+
     setSlotError(null);
+
+    // Form Validations
+    if (slotModalMode === 'create') {
+      if (!slotDate) {
+        setSlotError('Please select a date.');
+        return;
+      }
+
+      // Restrict to current date and forward date only
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const selectedDate = new Date(`${slotDate}T00:00:00`);
+      if (selectedDate < today) {
+        setSlotError('Date cannot be in the past. Only today or future dates can be selected.');
+        return;
+      }
+
+      if (!slotStartTime || !slotEndTime) {
+        setSlotError('Please enter both start time and end time.');
+        return;
+      }
+
+      if (slotEndTime <= slotStartTime) {
+        setSlotError('End time must be after start time.');
+        return;
+      }
+
+      const cap = parseFloat(slotCapacity);
+      if (isNaN(cap) || cap <= 0) {
+        setSlotError('Slot capacity must be a positive number greater than 0.');
+        return;
+      }
+
+      if (cap > selectedStationForSlots.capacityKwh) {
+        setSlotError(
+          `Slot capacity (${cap} kWh) cannot exceed station total capacity (${selectedStationForSlots.capacityKwh} kWh).`
+        );
+        return;
+      }
+    } else if (slotModalMode === 'edit') {
+      const cap = parseFloat(slotCapacity);
+      const availCap = parseFloat(slotAvailableCapacity);
+      if (isNaN(cap) || cap <= 0) {
+        setSlotError('Total capacity must be a positive number.');
+        return;
+      }
+      if (isNaN(availCap) || availCap < 0) {
+        setSlotError('Available capacity cannot be negative.');
+        return;
+      }
+      if (availCap > cap) {
+        setSlotError(`Available capacity (${availCap} kWh) cannot exceed total capacity (${cap} kWh).`);
+        return;
+      }
+    }
+
+    setIsSlotSaving(true);
     try {
       if (slotModalMode === 'create') {
         const startIso = new Date(`${slotDate}T${slotStartTime}:00Z`).toISOString();
@@ -909,10 +970,14 @@ export function NodeManagementPage() {
                     <input
                       type="date"
                       required
+                      min={new Date().toISOString().slice(0, 10)}
                       value={slotDate}
                       onChange={(e) => setSlotDate(e.target.value)}
                       className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                     />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Only today or future dates can be selected.
+                    </p>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
