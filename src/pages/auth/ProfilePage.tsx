@@ -259,43 +259,48 @@ export function ProfilePage() {
 
       {/* ── Hero card ── */}
       <div className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-        {/* gradient band */}
-        <div className={`h-28 bg-gradient-to-br ${gradient} opacity-80`} />
+        {/* Banner Gradient - Slate/Indigo background for high contrast against role avatar */}
+        <div className="h-28 bg-gradient-to-r from-slate-900 via-indigo-950/90 to-slate-900 border-b border-white/10 dark:border-white/5 relative">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.15),transparent_50%)]" />
+        </div>
 
-        {/* avatar + identity */}
-        <div className="relative -mt-12 flex flex-col sm:flex-row sm:items-end gap-4 px-6 pb-5">
-          {/* avatar */}
-          <div
-            className={`size-20 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-4 ring-card shrink-0`}
-          >
-            {initials}
+        {/* Content Container */}
+        <div className="px-6 pb-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-10 relative z-10">
+            {/* Avatar with sharp card ring and subtle glow */}
+            <div
+              className={`size-20 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white text-2xl font-bold shadow-2xl ring-4 ring-card border border-white/20 shrink-0`}
+            >
+              {initials}
+            </div>
+
+            {/* Edit button */}
+            {!isEditing && (
+              <button
+                id="btn-edit-profile"
+                onClick={openEdit}
+                className="shrink-0 flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors shadow-xs"
+              >
+                <Pencil className="size-3.5" />
+                Edit Profile
+              </button>
+            )}
           </div>
 
-          <div className="flex-1 min-w-0 pb-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-bold text-foreground leading-tight">
+          {/* User details cleanly positioned below avatar */}
+          <div className="mt-4">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h2 className="text-xl font-bold text-foreground tracking-tight">
                 {user.firstName} {user.lastName}
               </h2>
               {roleBadge(user.role)}
               {statusBadge(user.accountStatus)}
             </div>
-            <p className="mt-0.5 text-xs text-muted-foreground flex items-center gap-1">
-              <Mail className="size-3" />
+            <p className="mt-1 text-xs text-muted-foreground flex items-center gap-1.5">
+              <Mail className="size-3.5 text-muted-foreground/70" />
               {user.email}
             </p>
           </div>
-
-          {/* edit button */}
-          {!isEditing && (
-            <button
-              id="btn-edit-profile"
-              onClick={openEdit}
-              className="shrink-0 flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors"
-            >
-              <Pencil className="size-3.5" />
-              Edit Profile
-            </button>
-          )}
         </div>
       </div>
 
