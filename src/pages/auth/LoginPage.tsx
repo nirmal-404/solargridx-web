@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { AlertCircle, KeyRound, SunMedium } from "lucide-react";
+import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -83,7 +84,10 @@ export function LoginPage() {
   return (
     <div className="flex min-h-svh items-center justify-center bg-muted/30 p-6">
       <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2">
+        <div className="relative text-center space-y-2">
+          <div className="absolute right-0 top-0">
+            <ThemeToggle />
+          </div>
           <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md">
             <SunMedium className="size-7" />
           </div>
