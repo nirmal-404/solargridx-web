@@ -32,10 +32,7 @@ import {
   type UpdateStationPayload,
 } from "@/services/stationSlotService";
 import { parseApiError } from "@/utils/errorParser";
-import type {
-  SolarStation,
-  EnergyBookingSlot,
-} from "@/types/station";
+import type { SolarStation, EnergyBookingSlot } from "@/types/station";
 import { LocationPickerModal } from "@/components/stations/LocationPickerModal";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -314,6 +311,26 @@ export function NodeManagementPage() {
     null,
   );
 
+  // Recurring Slot Generator state
+  const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false);
+  const [recStartDate, setRecStartDate] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  );
+  const [recEndDate, setRecEndDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    return d.toISOString().slice(0, 10);
+  });
+  const [recSelectedDays, setRecSelectedDays] = useState<number[]>([
+    1, 2, 3, 4, 5,
+  ]); // Mon-Fri default
+  const [recTimeSlots, setRecTimeSlots] = useState<
+    { startTime: string; endTime: string }[]
+  >([{ startTime: "08:00", endTime: "10:00" }]);
+  const [recCapacity, setRecCapacity] = useState("10");
+  const [recSkipConflicts, setRecSkipConflicts] = useState(true);
+  const [isRecSaving, setIsRecSaving] = useState(false);
+
   const loadSlotsForStation = async (stationId: string) => {
     setIsLoadingSlots(true);
     setSlotError(null);
@@ -340,6 +357,15 @@ export function NodeManagementPage() {
     setSlotError(null);
     setSlotSuccess(null);
     setSlotModalMode(null);
+  };
+
+  const openRecurringSlotModal = () => {
+    setIsRecurringModalOpen(true);
+    setSlotError(null);
+  };
+
+  const closeRecurringSlotModal = () => {
+    setIsRecurringModalOpen(false);
   };
 
   const openCreateSlot = () => {
@@ -408,6 +434,70 @@ export function NodeManagementPage() {
       setSlotError(parseApiError(err, "Failed to deactivate slot."));
     } finally {
       setDeactivatingSlotId(null);
+    }
+  };
+
+  // ── Recurring Slot Generator Handlers ─────────────────────────────────────
+  const toggleDaySelection = (day: number) => {
+    setRecSelectedDays((prev) =>
+      prev.includes(day)
+        ? prev.filter((d) => d !== day)
+        : [...prev, day].sort(),
+    );
+  };
+
+  const addTimeSlotWindow = () => {
+    setRecTimeSlots((prev) => [
+      ...prev,
+      { startTime: "12:00", endTime: "14:00" },
+    ]);
+  };
+
+  const removeTimeSlotWindow = (index: number) => {
+    if (recTimeSlots.length <= 1) return;
+    setRecTimeSlots((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const updateTimeSlotWindow = (
+    index: number,
+    field: "startTime" | "endTime",
+    value: string,
+  ) => {
+    setRecTimeSlots((prev) =>
+      prev.map((ts, i) => (i === index ? { ...ts, [field]: value } : ts)),
+    );
+  };
+
+  const handleCreateRecurringSlots = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedStationForSlots) return;
+    setIsRecSaving(true);
+    setSlotError(null);
+    setSlotSuccess(null);
+    try {
+      const payload = {
+        stationId: selectedStationForSlots.stationId,
+        startDate: recStartDate,
+        endDate: recEndDate,
+        daysOfWeek: recSelectedDays,
+        timeSlots: recTimeSlots,
+        capacity: parseFloat(recCapacity),
+        skipExistingConflicts: recSkipConflicts,
+      };
+      const res = await stationSlotService.createRecurringSlots(payload);
+      setSlotSuccess(
+        `Recurring creation complete! Created ${res.totalCreated} slot(s)${
+          res.totalSkipped > 0
+            ? `, skipped ${res.totalSkipped} conflicting slot(s)`
+            : ""
+        }.`,
+      );
+      setIsRecurringModalOpen(false);
+      await loadSlotsForStation(selectedStationForSlots.stationId);
+    } catch (err) {
+      setSlotError(parseApiError(err, "Recurring slot generation failed."));
+    } finally {
+      setIsRecSaving(false);
     }
   };
 
@@ -818,7 +908,6 @@ export function NodeManagementPage() {
                   </form>
                 );
               })()}
-
           </div>
         </div>
       )}
@@ -871,6 +960,15 @@ export function NodeManagementPage() {
                   id="btn-create-slot"
                 >
                   <Plus className="size-3" /> Add Slot
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={openRecurringSlotModal}
+                  className="gap-1 text-xs h-7 border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                  id="btn-recurring-slots"
+                >
+                  <RefreshCw className="size-3" /> Recurring Slots
                 </Button>
                 <button
                   onClick={closeSlotManagement}
@@ -1191,6 +1289,237 @@ export function NodeManagementPage() {
         </div>
       )}
 
+      {/* ── Recurring Battery Slot Generator Modal ── */}
+      {isRecurringModalOpen && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs"
+            onClick={closeRecurringSlotModal}
+          />
+          <div className="relative w-full max-w-lg rounded-xl border border-border bg-background p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2">
+                <RefreshCw className="size-4 text-amber-500" />
+                <h3 className="text-sm font-semibold text-foreground">
+                  Generate Recurring Battery Slots
+                </h3>
+              </div>
+              <button
+                onClick={closeRecurringSlotModal}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => void handleCreateRecurringSlots(e)}
+              className="space-y-4 text-xs"
+            >
+              {/* Date Range */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-medium text-muted-foreground block mb-1">
+                    Start Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={recStartDate}
+                    onChange={(e) => setRecStartDate(e.target.value)}
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="font-medium text-muted-foreground block mb-1">
+                    End Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={recEndDate}
+                    onChange={(e) => setRecEndDate(e.target.value)}
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              {/* Days of week selection */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="font-medium text-muted-foreground">
+                    Days of the Week *
+                  </label>
+                  <div className="flex items-center gap-2 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => setRecSelectedDays([0, 1, 2, 3, 4, 5, 6])}
+                      className="text-primary hover:underline"
+                    >
+                      Select All
+                    </button>
+                    <span className="text-muted-foreground">·</span>
+                    <button
+                      type="button"
+                      onClick={() => setRecSelectedDays([1, 2, 3, 4, 5])}
+                      className="text-primary hover:underline"
+                    >
+                      Weekdays
+                    </button>
+                    <span className="text-muted-foreground">·</span>
+                    <button
+                      type="button"
+                      onClick={() => setRecSelectedDays([])}
+                      className="text-primary hover:underline"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {[
+                    { day: 1, label: "Mon" },
+                    { day: 2, label: "Tue" },
+                    { day: 3, label: "Wed" },
+                    { day: 4, label: "Thu" },
+                    { day: 5, label: "Fri" },
+                    { day: 6, label: "Sat" },
+                    { day: 0, label: "Sun" },
+                  ].map(({ day, label }) => {
+                    const selected = recSelectedDays.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => toggleDaySelection(day)}
+                        className={`px-3 py-1.5 rounded-md font-medium text-xs border transition-colors ${
+                          selected
+                            ? "bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-400"
+                            : "bg-muted/40 border-border text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Daily time slot builder */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="font-medium text-muted-foreground">
+                    Daily Time Slot Windows *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={addTimeSlotWindow}
+                    className="text-xs text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 font-medium"
+                  >
+                    <Plus className="size-3" /> Add Window
+                  </button>
+                </div>
+                {recTimeSlots.map((ts, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-2 rounded-md border border-border bg-muted/20 p-2"
+                  >
+                    <div className="flex-1 grid grid-cols-2 gap-2">
+                      <input
+                        type="time"
+                        required
+                        value={ts.startTime}
+                        onChange={(e) =>
+                          updateTimeSlotWindow(idx, "startTime", e.target.value)
+                        }
+                        className="rounded-md border border-border bg-background px-2.5 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                      <input
+                        type="time"
+                        required
+                        value={ts.endTime}
+                        onChange={(e) =>
+                          updateTimeSlotWindow(idx, "endTime", e.target.value)
+                        }
+                        className="rounded-md border border-border bg-background px-2.5 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                    {recTimeSlots.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeTimeSlotWindow(idx)}
+                        className="p-1 text-muted-foreground hover:text-destructive"
+                        title="Remove time window"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Slot Capacity & Conflict behavior */}
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="font-medium text-muted-foreground block mb-1">
+                    Slot Capacity (kWh) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    step="0.01"
+                    min="0.01"
+                    value={recCapacity}
+                    onChange={(e) => setRecCapacity(e.target.value)}
+                    placeholder="10"
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div className="flex items-end pb-2">
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={recSkipConflicts}
+                      onChange={(e) => setRecSkipConflicts(e.target.checked)}
+                      className="rounded text-amber-600 focus:ring-amber-500"
+                    />
+                    <span>Skip conflicting existing slots</span>
+                  </label>
+                </div>
+              </div>
+
+              {slotError && (
+                <p className="flex items-center gap-1.5 text-xs text-destructive">
+                  <AlertCircle className="size-3.5" />
+                  {slotError}
+                </p>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  type="submit"
+                  disabled={isRecSaving || recSelectedDays.length === 0}
+                  className="flex-1 text-xs h-9 bg-amber-600 hover:bg-amber-700 text-white"
+                  id="btn-submit-recurring-slots"
+                >
+                  {isRecSaving
+                    ? "Generating Slots…"
+                    : "Generate Recurring Slots"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeRecurringSlotModal}
+                  className="text-xs h-9"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ── Station table ── */}
       <Card className="border shadow-xs">
         <CardHeader>
@@ -1304,7 +1633,6 @@ export function NodeManagementPage() {
                       )}
                     </div>
                   </div>
-
                 </div>
               ))}
             </div>

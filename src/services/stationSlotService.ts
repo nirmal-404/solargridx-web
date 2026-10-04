@@ -29,6 +29,28 @@ export interface CreateSlotPayload {
   capacity: number;
 }
 
+export interface DailyTimeSlotPayload {
+  startTime: string; // e.g. "08:00"
+  endTime: string; // e.g. "10:00"
+}
+
+export interface CreateRecurringSlotsPayload {
+  stationId: string;
+  startDate: string; // e.g. "2026-10-05"
+  endDate: string; // e.g. "2026-10-31"
+  daysOfWeek?: number[]; // 0=Sunday, 1=Monday, ..., 6=Saturday
+  timeSlots: DailyTimeSlotPayload[];
+  capacity: number;
+  skipExistingConflicts?: boolean;
+}
+
+export interface BatchSlotCreationResponse {
+  totalCreated: number;
+  totalSkipped: number;
+  createdSlots: EnergyBookingSlot[];
+  messages: string[];
+}
+
 export interface UpdateSlotPayload {
   startTime?: string;
   endTime?: string;
@@ -103,6 +125,17 @@ export const stationSlotService = {
   // Creates a new battery booking slot for a station node.
   async createSlot(payload: CreateSlotPayload): Promise<EnergyBookingSlot> {
     const response = await apiClient.post<EnergyBookingSlot>("/slots", payload);
+    return response.data;
+  },
+
+  // Generates recurring battery booking slots based on date range and schedules.
+  async createRecurringSlots(
+    payload: CreateRecurringSlotsPayload,
+  ): Promise<BatchSlotCreationResponse> {
+    const response = await apiClient.post<BatchSlotCreationResponse>(
+      "/slots/recurring",
+      payload,
+    );
     return response.data;
   },
 
