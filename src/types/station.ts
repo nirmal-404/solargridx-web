@@ -3,17 +3,6 @@
 export type StationStatus = "Active" | "Deactivated";
 export type SlotStatus = "Active" | "Deactivated";
 
-export interface DailyHours {
-  day: string; // DayOfWeek name serialized by System.Text.Json
-  open: string; // 'HH:mm' local time
-  close: string;
-}
-
-export interface OperationalSchedule {
-  timeZoneId?: string;
-  days: DailyHours[];
-}
-
 export interface SolarStation {
   id: string;
   stationId: string;
@@ -23,7 +12,6 @@ export interface SolarStation {
   longitude: number;
   capacityKwh: number;
   availableBatteryStorageSlots: number;
-  schedule: OperationalSchedule;
   status: StationStatus;
 }
 
