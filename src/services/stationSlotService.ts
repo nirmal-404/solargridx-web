@@ -1,11 +1,7 @@
 // Smart Solar Microgrid Trading System - Solar Station & Slot API Transport
 // Handles all station CRUD operations and slot queries for the node management domain.
 import { apiClient } from "./apiClient";
-import type {
-  OperationalSchedule,
-  SolarStation,
-  EnergyBookingSlot,
-} from "@/types/station";
+import type { SolarStation, EnergyBookingSlot } from "@/types/station";
 
 export interface CreateStationPayload {
   stationId: string;
@@ -15,7 +11,6 @@ export interface CreateStationPayload {
   longitude: number;
   capacityKwh: number;
   availableBatteryStorageSlots: number;
-  schedule?: OperationalSchedule;
 }
 
 export interface UpdateStationPayload {
@@ -72,18 +67,6 @@ export const stationSlotService = {
     const response = await apiClient.put<SolarStation>(
       `/stations/${stationId}`,
       payload,
-    );
-    return response.data;
-  },
-
-  // Replaces the full operational schedule for a station.
-  async updateSchedule(
-    stationId: string,
-    schedule: OperationalSchedule,
-  ): Promise<SolarStation> {
-    const response = await apiClient.patch<SolarStation>(
-      `/stations/${stationId}/schedule`,
-      { schedule },
     );
     return response.data;
   },

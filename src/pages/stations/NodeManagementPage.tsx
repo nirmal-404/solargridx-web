@@ -19,8 +19,6 @@ import {
   RefreshCw,
   Zap,
   Server,
-  ChevronDown,
-  ChevronUp,
   X,
   Pencil,
   PowerOff,
@@ -36,8 +34,6 @@ import {
 import { parseApiError } from "@/utils/errorParser";
 import type {
   SolarStation,
-  OperationalSchedule,
-  DailyHours,
   EnergyBookingSlot,
 } from "@/types/station";
 import { LocationPickerModal } from "@/components/stations/LocationPickerModal";
@@ -45,36 +41,7 @@ import { LocationPickerModal } from "@/components/stations/LocationPickerModal";
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
-type FormMode = "create" | "edit" | "schedule" | null;
-
-const DAY_NAMES = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
-
-function dayIndex(day: string): number {
-  const numericDay = Number(day);
-  if (
-    Number.isInteger(numericDay) &&
-    numericDay >= 0 &&
-    numericDay < DAY_NAMES.length
-  )
-    return numericDay;
-  return DAY_NAMES.findIndex(
-    (name) => name.toLowerCase() === day.toLowerCase(),
-  );
-}
-
-function dayName(day: string): string {
-  return DAY_NAMES[dayIndex(day)] ?? day;
-}
-
-const EMPTY_SCHEDULE: OperationalSchedule = { days: [] };
+type FormMode = "create" | "edit" | null;
 
 function SlotStatusBadge({ status }: { status?: string | null }) {
   const s = status ?? "Available";
@@ -123,93 +90,6 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ScheduleEditor
-// ─────────────────────────────────────────────────────────────────────────────
-function ScheduleEditor({
-  schedule,
-  onChange,
-}: {
-  schedule: OperationalSchedule;
-  onChange: (s: OperationalSchedule) => void;
-}) {
-  const addDay = () => {
-    const usedDays = new Set(schedule.days.map((d) => dayName(d.day)));
-    const next = DAY_NAMES.find((day) => !usedDays.has(day)) ?? DAY_NAMES[0];
-    onChange({
-      ...schedule,
-      days: [...schedule.days, { day: next, open: "08:00", close: "17:00" }],
-    });
-  };
-
-  const removeDay = (i: number) =>
-    onChange({
-      ...schedule,
-      days: schedule.days.filter((_, idx) => idx !== i),
-    });
-
-  const updateDay = (i: number, patch: Partial<DailyHours>) =>
-    onChange({
-      ...schedule,
-      days: schedule.days.map((d, idx) => (idx === i ? { ...d, ...patch } : d)),
-    });
-
-  return (
-    <div className="space-y-2">
-      {schedule.days.map((d, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <select
-            id={`day-select-${i}`}
-            className="flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground"
-            value={String(dayIndex(d.day))}
-            onChange={(e) =>
-              updateDay(i, { day: DAY_NAMES[Number(e.target.value)] })
-            }
-          >
-            {DAY_NAMES.map((name, idx) => (
-              <option key={idx} value={idx}>
-                {name}
-              </option>
-            ))}
-          </select>
-          <input
-            type="time"
-            id={`open-time-${i}`}
-            className="rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground"
-            value={d.open}
-            onChange={(e) => updateDay(i, { open: e.target.value })}
-          />
-          <span className="text-xs text-muted-foreground">–</span>
-          <input
-            type="time"
-            id={`close-time-${i}`}
-            className="rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground"
-            value={d.close}
-            onChange={(e) => updateDay(i, { close: e.target.value })}
-          />
-          <button
-            type="button"
-            onClick={() => removeDay(i)}
-            className="text-muted-foreground hover:text-destructive"
-            aria-label="Remove day"
-          >
-            <X className="size-3.5" />
-          </button>
-        </div>
-      ))}
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={addDay}
-        className="text-xs h-7 gap-1.5 mt-1"
-      >
-        <Plus className="size-3" /> Add Day
-      </Button>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Main page
 // ─────────────────────────────────────────────────────────────────────────────
 export function NodeManagementPage() {
@@ -240,8 +120,6 @@ export function NodeManagementPage() {
   const [fLongitude, setFLongitude] = useState("");
   const [fCapacity, setFCapacity] = useState("");
   const [fBatterySlots, setFBatterySlots] = useState("");
-  const [fSchedule, setFSchedule] =
-    useState<OperationalSchedule>(EMPTY_SCHEDULE);
 
   // Map location picker state
   const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
@@ -250,9 +128,6 @@ export function NodeManagementPage() {
     setFLatitude(lat.toFixed(6));
     setFLongitude(lng.toFixed(6));
   };
-
-  // Row expand for schedule view
-  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Load stations
   const loadStations = async () => {
@@ -301,7 +176,6 @@ export function NodeManagementPage() {
     setFLongitude("");
     setFCapacity("");
     setFBatterySlots("");
-    setFSchedule(EMPTY_SCHEDULE);
     setFormError(null);
     setFormMode("create");
   };
@@ -316,13 +190,6 @@ export function NodeManagementPage() {
     setFBatterySlots(String(s.availableBatteryStorageSlots));
     setFormError(null);
     setFormMode("edit");
-  };
-
-  const openSchedule = (s: SolarStation) => {
-    setEditingStation(s);
-    setFSchedule(s.schedule ?? EMPTY_SCHEDULE);
-    setFormError(null);
-    setFormMode("schedule");
   };
 
   const closeForm = () => {
@@ -345,7 +212,6 @@ export function NodeManagementPage() {
           longitude: parseFloat(fLongitude),
           capacityKwh: parseFloat(fCapacity),
           availableBatteryStorageSlots: parseInt(fBatterySlots, 10),
-          schedule: fSchedule,
         };
         await stationSlotService.createStation(payload);
         setSuccessMessage("Station created successfully.");
@@ -384,27 +250,6 @@ export function NodeManagementPage() {
       } else {
         setFormError(parseApiError(err, "Operation failed."));
       }
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // ── Submit schedule ───────────────────────────────────────────────────────
-  const handleSubmitSchedule = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingStation) return;
-    setIsSaving(true);
-    setFormError(null);
-    try {
-      await stationSlotService.updateSchedule(
-        editingStation.stationId,
-        fSchedule,
-      );
-      setSuccessMessage("Schedule updated successfully.");
-      closeForm();
-      await loadStations();
-    } catch (err) {
-      setFormError(parseApiError(err, "Schedule update failed."));
     } finally {
       setIsSaving(false);
     }
@@ -654,9 +499,7 @@ export function NodeManagementPage() {
               <h2 className="text-sm font-semibold text-foreground">
                 {formMode === "create"
                   ? "Add New Station"
-                  : formMode === "edit"
-                    ? `Edit — ${editingStation?.stationId}`
-                    : `Schedule — ${editingStation?.stationId}`}
+                  : `Edit — ${editingStation?.stationId}`}
               </h2>
               <button
                 onClick={closeForm}
@@ -943,19 +786,6 @@ export function NodeManagementPage() {
                       </div>
                     </div>
 
-                    {/* Schedule (create only) */}
-                    {formMode === "create" && (
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-2">
-                          Operating Schedule
-                        </p>
-                        <ScheduleEditor
-                          schedule={fSchedule}
-                          onChange={setFSchedule}
-                        />
-                      </div>
-                    )}
-
                     {formError && (
                       <p className="flex items-center gap-1.5 text-xs text-destructive">
                         <AlertCircle className="size-3.5" />
@@ -989,67 +819,6 @@ export function NodeManagementPage() {
                 );
               })()}
 
-            {/* ── Schedule form ── */}
-            {formMode === "schedule" && (
-              <form
-                onSubmit={(e) => void handleSubmitSchedule(e)}
-                className="flex-1 space-y-4 p-4"
-              >
-                <div>
-                  <label
-                    className="text-xs font-medium text-muted-foreground"
-                    htmlFor="tz-input"
-                  >
-                    Time Zone (IANA, optional)
-                  </label>
-                  <input
-                    id="tz-input"
-                    value={fSchedule.timeZoneId ?? ""}
-                    placeholder="Asia/Colombo"
-                    onChange={(e) =>
-                      setFSchedule({
-                        ...fSchedule,
-                        timeZoneId: e.target.value || undefined,
-                      })
-                    }
-                    className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-2">
-                    Operating Windows
-                  </p>
-                  <ScheduleEditor
-                    schedule={fSchedule}
-                    onChange={setFSchedule}
-                  />
-                </div>
-                {formError && (
-                  <p className="flex items-center gap-1.5 text-xs text-destructive">
-                    <AlertCircle className="size-3.5" />
-                    {formError}
-                  </p>
-                )}
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    type="submit"
-                    disabled={isSaving}
-                    className="flex-1 text-xs h-9"
-                    id="btn-submit-schedule"
-                  >
-                    {isSaving ? "Saving…" : "Update Schedule"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={closeForm}
-                    className="text-xs h-9"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            )}
           </div>
         </div>
       )}
@@ -1498,22 +1267,6 @@ export function NodeManagementPage() {
                         <Battery className="size-3" />
                         Battery Slots
                       </button>
-                      <button
-                        title="Toggle schedule"
-                        onClick={() =>
-                          setExpandedId(
-                            expandedId === s.stationId ? null : s.stationId,
-                          )
-                        }
-                        className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted"
-                      >
-                        {expandedId === s.stationId ? (
-                          <ChevronUp className="size-3" />
-                        ) : (
-                          <ChevronDown className="size-3" />
-                        )}
-                        Schedule
-                      </button>
                       {isBackoffice && (
                         <>
                           <button
@@ -1524,15 +1277,6 @@ export function NodeManagementPage() {
                             className="rounded-md p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10"
                           >
                             <Pencil className="size-3.5" />
-                          </button>
-                          <button
-                            id={`btn-schedule-${s.stationId}`}
-                            title="Edit schedule"
-                            aria-label={`Edit schedule for ${s.name}`}
-                            onClick={() => openSchedule(s)}
-                            className="rounded-md p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                          >
-                            <MapPin className="size-3.5" />
                           </button>
                           {s.status === "Active" ? (
                             <button
@@ -1561,27 +1305,6 @@ export function NodeManagementPage() {
                     </div>
                   </div>
 
-                  {/* ── Expanded schedule ── */}
-                  {expandedId === s.stationId && (
-                    <div className="bg-muted/20 px-6 pb-3 pt-2 text-xs">
-                      {!s.schedule?.days?.length ? (
-                        <span className="text-muted-foreground italic">
-                          No schedule configured.
-                        </span>
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {s.schedule.days.map((d, i) => (
-                            <span
-                              key={i}
-                              className="rounded-md border border-border bg-background px-2 py-1 font-medium"
-                            >
-                              {dayName(d.day)}: {d.open} – {d.close}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
