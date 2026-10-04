@@ -1,15 +1,52 @@
-import { Button } from '@/components/ui/button'
+// Smart Solar Microgrid Trading System - Application Routing Entrypoint
+import { Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
+import { AppLayout } from "@/layouts/AppLayout";
+import { LoginPage } from "@/pages/auth/LoginPage";
+import { RegisterPage } from "@/pages/auth/RegisterPage";
+import { DashboardPage } from "@/pages/dashboard/DashboardPage";
+import { ReservationsPage } from "@/pages/reservations/ReservationsPage";
+import { CreateReservationPage } from "@/pages/reservations/CreateReservationPage";
+import { PendingPage } from "@/pages/reservations/PendingPage";
+import { HistoryPage } from "@/pages/reservations/HistoryPage";
+import { UserManagementPage } from "@/pages/users/UserManagementPage";
+import { ProsumerManagementPage } from "@/pages/prosumers/ProsumerManagementPage";
+import { NodeManagementPage } from "@/pages/stations/NodeManagementPage";
+import { NodeMapPage } from "@/pages/stations/NodeMapPage";
+import { ProfilePage } from "@/pages/auth/ProfilePage";
 
 function App() {
   return (
-    <main className="flex min-h-svh items-center justify-center bg-background p-8 text-foreground">
-      <section className="w-full max-w-lg space-y-5 rounded-xl border p-8">
-        <h1 className="text-3xl font-semibold tracking-tight">SolarGridX</h1>
-        <p className="text-muted-foreground">Smart Solar Microgrid Trading System</p>
-        <Button disabled>Coming soon</Button>
-      </section>
-    </main>
-  )
+    <AuthProvider>
+      <Routes>
+        {/* Public Authentication Routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+
+        {/* Protected Enterprise Portal Routes */}
+        <Route path="/" element={<AppLayout />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="users" element={<UserManagementPage />} />
+          <Route path="prosumers" element={<ProsumerManagementPage />} />
+          <Route path="reservations" element={<ReservationsPage />} />
+          <Route
+            path="reservations/create"
+            element={<CreateReservationPage />}
+          />
+          <Route path="reservations/pending" element={<PendingPage />} />
+          <Route path="reservations/history" element={<HistoryPage />} />
+          {/* Member 2: Microgrid node management and map */}
+          <Route path="stations" element={<NodeManagementPage />} />
+          <Route path="stations/map" element={<NodeMapPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+        </Route>
+
+        {/* Fallback Catch-all Route */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </AuthProvider>
+  );
 }
 
-export default App
+export default App;
