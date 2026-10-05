@@ -84,18 +84,16 @@ export function LoginPage() {
   return (
     <div className="flex min-h-svh items-center justify-center bg-muted/30 p-6">
       <div className="w-full max-w-md space-y-6">
-        <div className="relative text-center space-y-2">
-          <div className="absolute right-0 top-0">
-            <ThemeToggle />
+        <div className="text-center space-y-3">
+          <div className="flex justify-center">
+            <img
+              src="/logo.png"
+              alt="SolarGridX Logo"
+              className="h-28 w-auto object-contain drop-shadow-sm transition-transform hover:scale-105 duration-200"
+            />
           </div>
-          <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md">
-            <SunMedium className="size-7" />
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            SolarGridX
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            Smart Solar Microgrid Energy Trading & Booking Portal
+          <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+            Smart Solar Microgrid Energy Trading &amp; Booking Portal
           </p>
         </div>
 
@@ -136,12 +134,12 @@ export function LoginPage() {
                 <KeyRound className="size-3 text-amber-500" />
                 <span>Quick Test Accounts:</span>
               </p>
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="text-[10px] h-7"
+                  className="text-xs h-8"
                   onClick={() =>
                     handleQuickFill("admin@solargridx.local", "Admin@1234")
                   }
@@ -152,7 +150,7 @@ export function LoginPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="text-[10px] h-7"
+                  className="text-xs h-8"
                   onClick={() =>
                     handleQuickFill(
                       "operator@solargridx.local",
@@ -162,32 +160,7 @@ export function LoginPage() {
                 >
                   Operator
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="text-[10px] h-7"
-                  onClick={() =>
-                    handleQuickFill(
-                      "kamal.silva@prosumer.local",
-                      "Prosumer@1234",
-                    )
-                  }
-                >
-                  Prosumer
-                </Button>
               </div>
-            </div>
-
-            <div className="pt-2 text-center text-xs text-muted-foreground">
-              Don&apos;t have an account?{" "}
-              <button
-                type="button"
-                onClick={() => navigate("/register")}
-                className="font-medium text-primary underline-offset-4 hover:underline"
-              >
-                Create one
-              </button>
             </div>
           </CardContent>
         </Card>

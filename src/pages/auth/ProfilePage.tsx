@@ -247,15 +247,6 @@ export function ProfilePage() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      {/* ── Page header ── */}
-      <div>
-        <h1 className="text-xl font-semibold text-foreground tracking-tight">
-          My Profile
-        </h1>
-        <p className="mt-1 text-xs text-muted-foreground">
-          View and manage your account information.
-        </p>
-      </div>
 
       {/* ── Hero card ── */}
       <div className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
