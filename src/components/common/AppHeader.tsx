@@ -1,15 +1,16 @@
 // Smart Solar Microgrid Trading System - Application Top Header
-import { Link } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
-import { Breadcrumb } from '@/components/common/Breadcrumb';
-import type { UserRole } from '@/types/auth';
+import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { SunMedium, LogOut } from "lucide-react";
+import { Breadcrumb } from "@/components/common/Breadcrumb";
+import { ThemeToggle } from "@/components/common/ThemeToggle";
+import type { UserRole } from "@/types/auth";
 
 function avatarGradient(role: UserRole | null) {
-  if (role === 'Backoffice')   return 'from-violet-500 to-purple-700';
-  if (role === 'GridOperator') return 'from-sky-500 to-blue-700';
-  return 'from-emerald-500 to-teal-700';
+  if (role === "Backoffice") return "from-violet-500 to-purple-700";
+  if (role === "GridOperator") return "from-sky-500 to-blue-700";
+  return "from-emerald-500 to-teal-700";
 }
 
 export function AppHeader() {
@@ -17,7 +18,7 @@ export function AppHeader() {
   const gradient = avatarGradient(role);
   const initials = user
     ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()
-    : '?';
+    : "?";
 
   return (
     <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b bg-card/80 px-4 md:px-6 backdrop-blur-md">
@@ -38,8 +39,10 @@ export function AppHeader() {
         <Breadcrumb />
       </div>
 
-      {/* Right: Avatar + Logout */}
+      {/* Right: Theme Toggle + Avatar + Logout */}
       <div className="flex items-center gap-2">
+        <ThemeToggle />
+
         {user && (
           <Link
             to="/profile"
@@ -48,7 +51,9 @@ export function AppHeader() {
             title="My Profile"
           >
             {/* initials avatar */}
-            <div className={`size-8 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center text-white text-xs font-bold ring-2 ring-offset-1 ring-offset-card ring-transparent group-hover:ring-primary/40 transition-all`}>
+            <div
+              className={`size-8 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center text-white text-xs font-bold ring-2 ring-offset-1 ring-offset-card ring-transparent group-hover:ring-primary/40 transition-all`}
+            >
               {initials}
             </div>
             <div className="hidden text-right text-xs sm:block">
@@ -73,4 +78,3 @@ export function AppHeader() {
     </header>
   );
 }
-

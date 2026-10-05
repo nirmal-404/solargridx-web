@@ -19,7 +19,7 @@ import type { SolarStation } from '@/types/station';
 import { cn } from '@/lib/utils';
 
 // Leaflet CSS must be loaded; import it here so Vite bundles it.
-import 'leaflet/dist/leaflet.css';
+import "leaflet/dist/leaflet.css";
 
 export function NodeMapPage() {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -36,9 +36,9 @@ export function NodeMapPage() {
   const [pointedCoords, setPointedCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Initialise Leaflet map on first mount.
+  // Initialise Leaflet independently so marker rendering can wait for both inputs.
   useEffect(() => {
-    let map: import('leaflet').Map;
+    let isMounted = true;
 
     const init = async () => {
       const L = await import('leaflet');
@@ -56,10 +56,16 @@ export function NodeMapPage() {
       // Centre on Sri Lanka by default
       map = L.map(mapRef.current, { zoomControl: true }).setView([7.8731, 80.7718], 8);
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19,
-      }).addTo(map);
+        delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)
+          ._getIconUrl;
+        L.Icon.Default.mergeOptions({
+          iconRetinaUrl:
+            "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+          iconUrl:
+            "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+          shadowUrl:
+            "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+        });
 
       // Handle clicking anywhere on the map to inspect or point a new location
       map.on('click', (e: import('leaflet').LeafletMouseEvent) => {
@@ -123,10 +129,12 @@ export function NodeMapPage() {
     void init();
 
     return () => {
+      isMounted = false;
       if (leafletMapRef.current) {
         leafletMapRef.current.remove();
         leafletMapRef.current = null;
       }
+      setIsMapReady(false);
     };
   }, []);
 
@@ -200,7 +208,7 @@ export function NodeMapPage() {
         setStations(data);
         await plotMarkers(data);
       } catch (err) {
-        setError(parseApiError(err, 'Failed to load station data.'));
+        setError(parseApiError(err, "Failed to load station data."));
       } finally {
         setIsLoading(false);
       }
@@ -208,6 +216,43 @@ export function NodeMapPage() {
 
     void load();
   }, []);
+
+  // Plot markers after both the map and station data are ready.
+  useEffect(() => {
+    const map = leafletMapRef.current;
+    if (!isMapReady || !map) return;
+
+    let isMounted = true;
+    const renderMarkers = async () => {
+      try {
+        const L = await import("leaflet");
+        if (!isMounted || leafletMapRef.current !== map) return;
+
+        markersRef.current.forEach((marker) => marker.remove());
+        markersRef.current = stations.map((station) =>
+          L.marker([station.latitude, station.longitude])
+            .addTo(map)
+            .bindPopup(createStationPopup(station), { maxWidth: 260 }),
+        );
+
+        if (markersRef.current.length === 1) {
+          map.setView(markersRef.current[0].getLatLng(), 13);
+        } else if (markersRef.current.length > 1) {
+          map.fitBounds(
+            L.featureGroup(markersRef.current).getBounds().pad(0.2),
+          );
+        }
+      } catch (err) {
+        if (isMounted)
+          setError(parseApiError(err, "Unable to display node markers."));
+      }
+    };
+
+    void renderMarkers();
+    return () => {
+      isMounted = false;
+    };
+  }, [isMapReady, stations]);
 
   const handleRefresh = async () => {
     setIsLoading(true);
@@ -345,7 +390,9 @@ export function NodeMapPage() {
         <div>
           <div className="flex items-center gap-2">
             <MapPin className="size-5 text-primary" />
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Node Map</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Node Map
+            </h1>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
             Live map of active solar microgrid nodes — click any station card or marker to show that part of the map.
@@ -357,7 +404,9 @@ export function NodeMapPage() {
           disabled={isLoading}
           className="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
         >
-          <RefreshCw className={`size-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            className={`size-3.5 ${isLoading ? "animate-spin" : ""}`}
+          />
           Refresh Map
         </button>
       </div>
@@ -365,7 +414,8 @@ export function NodeMapPage() {
       {/* ── Error banner ── */}
       {error && (
         <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
-          <AlertCircle className="size-4 shrink-0" />{error}
+          <AlertCircle className="size-4 shrink-0" />
+          {error}
         </div>
       )}
 
@@ -422,6 +472,13 @@ export function NodeMapPage() {
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-sm">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <RefreshCw className="size-4 animate-spin" /> Loading map data…
+            </div>
+          </div>
+        )}
+        {!isLoading && !error && stations.length === 0 && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+            <div className="rounded-md border border-border bg-background/95 px-4 py-3 text-sm text-muted-foreground shadow-sm">
+              No active nodes are available to display.
             </div>
           </div>
         )}

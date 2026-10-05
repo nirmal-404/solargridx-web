@@ -1,34 +1,47 @@
 // Smart Solar Microgrid Trading System - Create Reservation Page
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Loader2, PlusCircle, ArrowLeft, AlertCircle, Zap, ShieldCheck } from 'lucide-react';
-import { stationSlotService } from '@/services/stationSlotService';
-import { reservationService } from '@/services/reservationService';
-import { formatDateTime, isWithinSevenDayWindow } from '@/utils/dateUtils';
-import { parseApiError } from '@/utils/errorParser';
-import type { SolarStation, EnergyBookingSlot } from '@/types/station';
+} from "@/components/ui/select";
+import {
+  Loader2,
+  PlusCircle,
+  ArrowLeft,
+  AlertCircle,
+  Zap,
+  ShieldCheck,
+} from "lucide-react";
+import { stationSlotService } from "@/services/stationSlotService";
+import { reservationService } from "@/services/reservationService";
+import { formatDateTime, isWithinSevenDayWindow } from "@/utils/dateUtils";
+import { parseApiError } from "@/utils/errorParser";
+import type { SolarStation, EnergyBookingSlot } from "@/types/station";
 
 export function CreateReservationPage() {
   const navigate = useNavigate();
 
   const [stations, setStations] = useState<SolarStation[]>([]);
-  const [selectedStationId, setSelectedStationId] = useState<string>('');
+  const [selectedStationId, setSelectedStationId] = useState<string>("");
 
   const [slots, setSlots] = useState<EnergyBookingSlot[]>([]);
-  const [selectedSlotId, setSelectedSlotId] = useState<string>('');
+  const [selectedSlotId, setSelectedSlotId] = useState<string>("");
 
-  const [requestedCapacity, setRequestedCapacity] = useState<string>('');
+  const [requestedCapacity, setRequestedCapacity] = useState<string>("");
   const [isLoadingStations, setIsLoadingStations] = useState(true);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,7 +58,9 @@ export function CreateReservationPage() {
           setSelectedStationId(stationList[0].stationId);
         }
       } catch (err: unknown) {
-        setErrorMessage(parseApiError(err, 'Failed to load microgrid solar stations.'));
+        setErrorMessage(
+          parseApiError(err, "Failed to load microgrid solar stations."),
+        );
       } finally {
         setIsLoadingStations(false);
       }
@@ -57,25 +72,32 @@ export function CreateReservationPage() {
   useEffect(() => {
     if (!selectedStationId) {
       setSlots([]);
-      setSelectedSlotId('');
+      setSelectedSlotId("");
       return;
     }
 
     async function loadSlots() {
       setIsLoadingSlots(true);
-      setSelectedSlotId('');
+      setSelectedSlotId("");
       try {
-        const availableSlots = await stationSlotService.getSlots(selectedStationId, true);
+        const availableSlots = await stationSlotService.getSlots(
+          selectedStationId,
+          false,
+        );
         // Filter to future slots within 7-day window
         const validSlots = availableSlots.filter(
-          (s) => isWithinSevenDayWindow(s.startTime).valid && s.availableCapacity > 0
+          (s) =>
+            isWithinSevenDayWindow(s.startTime).valid &&
+            s.availableCapacity > 0,
         );
         setSlots(validSlots);
         if (validSlots.length > 0) {
           setSelectedSlotId(validSlots[0].slotId);
         }
       } catch (err: unknown) {
-        setErrorMessage(parseApiError(err, 'Failed to load energy booking slots.'));
+        setErrorMessage(
+          parseApiError(err, "Failed to load energy booking slots."),
+        );
       } finally {
         setIsLoadingSlots(false);
       }
@@ -90,31 +112,33 @@ export function CreateReservationPage() {
     setErrorMessage(null);
 
     if (!selectedStationId) {
-      setErrorMessage('Please select a solar microgrid station.');
+      setErrorMessage("Please select a solar microgrid station.");
       return;
     }
 
     if (!selectedSlotId || !selectedSlot) {
-      setErrorMessage('Please select an available booking slot.');
+      setErrorMessage("Please select an available booking slot.");
       return;
     }
 
     const capacityNum = parseFloat(requestedCapacity);
     if (isNaN(capacityNum) || capacityNum <= 0) {
-      setErrorMessage('Requested capacity must be a positive number.');
+      setErrorMessage("Requested capacity must be a positive number.");
       return;
     }
 
     if (capacityNum > selectedSlot.availableCapacity) {
       setErrorMessage(
-        `Requested capacity (${capacityNum} kWh) exceeds available capacity (${selectedSlot.availableCapacity} kWh).`
+        `Requested capacity (${capacityNum} kWh) exceeds available capacity (${selectedSlot.availableCapacity} kWh).`,
       );
       return;
     }
 
     const windowCheck = isWithinSevenDayWindow(selectedSlot.startTime);
     if (!windowCheck.valid) {
-      setErrorMessage(windowCheck.reason || 'Slot time is outside the 7-day booking window.');
+      setErrorMessage(
+        windowCheck.reason || "Slot time is outside the 7-day booking window.",
+      );
       return;
     }
 
@@ -125,9 +149,11 @@ export function CreateReservationPage() {
         slotId: selectedSlotId,
         requestedCapacity: capacityNum,
       });
-      navigate('/reservations');
+      navigate("/reservations");
     } catch (err: unknown) {
-      setErrorMessage(parseApiError(err, 'Failed to create energy reservation.'));
+      setErrorMessage(
+        parseApiError(err, "Failed to create energy reservation."),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -139,7 +165,7 @@ export function CreateReservationPage() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => navigate('/reservations')}
+          onClick={() => navigate("/reservations")}
           className="gap-1.5 text-xs h-8"
         >
           <ArrowLeft className="size-3.5" />
@@ -150,7 +176,8 @@ export function CreateReservationPage() {
             Book Energy Slot
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Reserve solar microgrid energy capacity within the authorized 7-day schedule.
+            Reserve solar microgrid energy capacity within the authorized 7-day
+            schedule.
           </p>
         </div>
       </div>
@@ -221,7 +248,8 @@ export function CreateReservationPage() {
                 </div>
               ) : slots.length === 0 ? (
                 <p className="text-xs text-muted-foreground italic py-1.5">
-                  No active future slots available within the 7-day horizon for this station.
+                  No active future slots available within the 7-day horizon for
+                  this station.
                 </p>
               ) : (
                 <Select
@@ -235,7 +263,9 @@ export function CreateReservationPage() {
                   <SelectContent>
                     {slots.map((s) => (
                       <SelectItem key={s.slotId} value={s.slotId}>
-                        {formatDateTime(s.startTime)} — {formatDateTime(s.endTime)} ({s.availableCapacity} kWh available)
+                        {formatDateTime(s.startTime)} —{" "}
+                        {formatDateTime(s.endTime)} ({s.availableCapacity} kWh
+                        available)
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -246,7 +276,9 @@ export function CreateReservationPage() {
             {/* Capacity Input */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs">
-                <Label htmlFor="capacity">Requested Energy Capacity (kWh)</Label>
+                <Label htmlFor="capacity">
+                  Requested Energy Capacity (kWh)
+                </Label>
                 {selectedSlot && (
                   <span className="text-[11px] text-muted-foreground font-mono">
                     Available: {selectedSlot.availableCapacity} kWh
@@ -274,13 +306,18 @@ export function CreateReservationPage() {
                 <span>Authoritative Reservation Terms</span>
               </div>
               <p>
-                1. Reservations are created in <span className="font-semibold text-foreground">Pending</span> status for operator approval.
+                1. Reservations are created in{" "}
+                <span className="font-semibold text-foreground">Pending</span>{" "}
+                status for operator approval.
               </p>
               <p>
-                2. Changes or cancellations must be made at least <span className="font-semibold text-foreground">12 hours</span> before scheduled session start time.
+                2. Changes or cancellations must be made at least{" "}
+                <span className="font-semibold text-foreground">12 hours</span>{" "}
+                before scheduled session start time.
               </p>
               <p>
-                3. Capacity is conditionally deducted by the central microgrid API to prevent overbooking conflicts.
+                3. Capacity is conditionally deducted by the central microgrid
+                API to prevent overbooking conflicts.
               </p>
             </div>
 
@@ -288,7 +325,7 @@ export function CreateReservationPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate('/reservations')}
+                onClick={() => navigate("/reservations")}
                 disabled={isSubmitting}
               >
                 Cancel
