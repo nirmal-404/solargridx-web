@@ -7,7 +7,7 @@ import { Sidebar } from '@/components/common/Sidebar';
 import { Loader2 } from 'lucide-react';
 
 export function AppLayout() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, role, logout } = useAuth();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     return localStorage.getItem('solargridx_sidebar_collapsed') === 'true';
   });
@@ -29,7 +29,11 @@ export function AppLayout() {
     );
   }
 
-  if (!isAuthenticated) {
+  // Reject unauthenticated users or Prosumers (mobile-only)
+  if (!isAuthenticated || role === 'Prosumer') {
+    if (role === 'Prosumer') {
+      logout();
+    }
     return <Navigate to="/login" replace />;
   }
 
