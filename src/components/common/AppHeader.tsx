@@ -2,7 +2,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { SunMedium, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Breadcrumb } from "@/components/common/Breadcrumb";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 import type { UserRole } from "@/types/auth";
@@ -32,7 +32,8 @@ export function AppHeader() {
           />
           <div className="hidden md:flex items-center border-r pr-4 mr-1 h-6">
             <span className="text-base font-bold tracking-tight text-foreground">
-              Solar<span className="text-[#0284C7]">Grid</span><span className="text-[#10B981]">X</span>
+              Solar<span className="text-[#0284C7]">Grid</span>
+              <span className="text-[#10B981]">X</span>
             </span>
           </div>
         </div>

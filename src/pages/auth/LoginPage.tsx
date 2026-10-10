@@ -1,8 +1,7 @@
 // Smart Solar Microgrid Trading System - Login Page
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { AlertCircle, KeyRound, SunMedium } from "lucide-react";
-import { ThemeToggle } from "@/components/common/ThemeToggle";
+import { AlertCircle, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
